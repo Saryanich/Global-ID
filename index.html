@@ -320,6 +320,10 @@
                 <h2 class="section-title">👤 Личные данные</h2>
                 
                 <div class="form-group">
+                    <label class="form-label">Основная почта</label>
+                    <input type="email" id="mainEmail" readonly style="background: #0a2a0a; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
                     <label class="form-label">ФИО</label>
                     <input type="text" id="fullName" placeholder="Иванов Иван Иванович">
                 </div>
@@ -455,8 +459,10 @@
             const qrContainer = document.getElementById('qrContainer');
             qrContainer.innerHTML = '';
             try {
+                // Генерируем текст для QR-кода в формате "Global ID: KXjJ96R1DUA7HQ92Hms6H3"
+                const qrText = `Global ID: ${globalId}`;
                 new QRCode(qrContainer, {
-                    text: `https://saryanich.github.io/GLoB-Data/profile.html?id=${globalId}`,
+                    text: qrText,
                     width: 200,
                     height: 200,
                     colorDark: "#00aa00",
@@ -584,6 +590,7 @@
             document.getElementById('globalIdValue').innerText = currentUserData.globalId || '—';
             
             // Заполняем все поля
+            document.getElementById('mainEmail').value = user.email;
             document.getElementById('fullName').value = currentUserData.fullName || '';
             document.getElementById('birthDate').value = currentUserData.birthDate || '';
             document.getElementById('phoneNumber').value = currentUserData.phoneNumber || '';
