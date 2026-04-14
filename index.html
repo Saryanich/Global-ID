@@ -250,32 +250,6 @@
             font-weight: bold;
         }
         
-        .pending-request-card {
-            background: linear-gradient(135deg, #003300, #006600);
-            border-radius: 20px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 2px solid #ffaa00;
-            position: relative;
-            animation: pulse 1s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { border-color: #ffaa00; box-shadow: 0 0 10px rgba(255,170,0,0.3); }
-            50% { border-color: #ffcc44; box-shadow: 0 0 20px rgba(255,170,0,0.6); }
-        }
-        .pending-badge {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffaa00;
-            color: #1a1a00;
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
         .two-factor-code {
             background: linear-gradient(135deg, #000c00, #001a00);
             border: 3.5px solid #00ff44;
@@ -303,31 +277,6 @@
             margin-top: 12px;
             font-size: 16px;
             font-weight: 600;
-        }
-        
-        .request-info {
-            background: rgba(0, 50, 0, 0.8);
-            border-radius: 16px;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: left;
-        }
-        .request-info p {
-            margin: 5px 0;
-            font-size: 13px;
-            color: #88ff88;
-        }
-        .request-info strong {
-            color: #ffaa00;
-        }
-        
-        .approve-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-        .approve-buttons button {
-            flex: 1;
         }
         
         .warning-box {
@@ -431,6 +380,21 @@
         
         .info-text { color: #00aa66; font-size: 13px; text-align: center; margin-top: 18px; }
         
+        .device-item {
+            background: rgba(0, 40, 0, 0.5);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #00aa00;
+        }
+        .device-info-small { flex: 1; }
+        .device-name { color: #00ff66; font-weight: 600; margin-bottom: 4px; }
+        .device-meta { color: #00aa66; font-size: 11px; }
+        .device-current { background: #00aa00; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; }
+        
         @media (max-width: 480px) {
             body { padding: 12px; }
             .card { padding: 22px 18px; }
@@ -438,7 +402,6 @@
             .code-display { font-size: 56px; letter-spacing: 16px; }
             .code-input { width: 50px; height: 60px; font-size: 28px; }
             h1 { font-size: 26px; }
-            .approve-buttons { flex-direction: column; }
         }
         
         input[type="number"] {
@@ -457,7 +420,7 @@
         <div id="authForm" class="card">
             <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img">
             <h1>IT Global</h1>
-            <div class="subtitle">Единый идентификатор</div>
+            <div class="subtitle">Управление единым идентификатором</div>
             
             <div id="loginMode">
                 <div class="form-group">
@@ -468,47 +431,49 @@
                     <label class="form-label">🔒 Пароль</label>
                     <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
                 </div>
-                <button class="btn btn-primary" onclick="login()">🚪 Войти</button>
+                <button class="btn btn-primary" onclick="login()">🚪 Войти в систему</button>
                 <div class="divider">
                     <div class="divider-line"></div>
                     <div class="divider-text">или</div>
                     <div class="divider-line"></div>
                 </div>
-                <button class="btn btn-secondary" onclick="showRegister()">✨ Создать Global ID</button>
+                <button class="btn btn-secondary" onclick="showRegister()">✨ Создать новый Global ID</button>
             </div>
             
             <div id="registerMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
                 <h1>Регистрация</h1>
-                <div class="subtitle">Создание Global ID</div>
+                <div class="subtitle">Создание нового Global ID</div>
                 <div class="form-group">
                     <label class="form-label">📧 Email</label>
-                    <input type="email" id="regEmail" placeholder="your@email.com">
+                    <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label class="form-label">🔒 Пароль (мин. 6 символов)</label>
-                    <input type="password" id="regPassword" placeholder="••••••••">
+                    <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label class="form-label">🔒 Подтверждение пароля</label>
-                    <input type="password" id="regConfirm" placeholder="••••••••">
+                    <input type="password" id="regConfirm" placeholder="••••••••" autocomplete="new-password">
                 </div>
                 <button class="btn btn-primary" onclick="register()">✅ Зарегистрироваться</button>
-                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 12px;">← Назад</button>
+                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 12px;">← Назад ко входу</button>
             </div>
             
-            <!-- 2FA при входе с нового устройства (на НОВОМ устройстве) -->
+            <!-- 2FA при входе (НОВОЕ УСТРОЙСТВО) -->
             <div id="twoFactorLoginMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="font-size:48px; margin-bottom:10px;">🔐</div>
-                    <h3 style="color:#00ff66; margin-bottom:8px;">Подтверждение входа</h3>
-                    <p style="color:#ffaa00; font-size:14px;">Введите код из доверенного устройства</p>
+                    <h3 style="color:#00ff66; margin-bottom:8px;">Новое устройство!</h3>
+                    <p style="color:#ffaa00; font-size:14px; font-weight:bold;">Обнаружен вход с нового устройства</p>
+                    <p style="color:#00cc66; font-size:13px; margin-top:10px;">Введите код, который отображается<br>в <strong>уже активной сессии Global ID</strong></p>
                 </div>
                 
-                <div class="warning-box">
-                    <strong>🆕 Информация об устройстве:</strong><br>
-                    <span id="newDeviceInfoText">Загрузка...</span>
+                <div class="device-info" style="background:rgba(255,170,0,0.2); border-color:#ffaa00;">
+                    <strong>🆕 Информация о новом устройстве:</strong><br>
+                    <span id="newDeviceIp">Загрузка...</span><br>
+                    <span id="newDeviceBrowser">Загрузка...</span>
                 </div>
                 
                 <div class="code-input-container">
@@ -520,11 +485,16 @@
                 
                 <div class="warning-box">
                     <strong>⚠️ ВНИМАНИЕ!</strong><br>
-                    Код отображается на ВАШЕМ доверенном устройстве.<br>
+                    Код отображается на ВАШЕМ основном устройстве в разделе "Коды для входа".<br>
                     Никогда не сообщайте этот код никому!
                 </div>
                 
-                <button class="btn btn-primary" onclick="verifyLogin2FA()">✅ Подтвердить</button>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="trustDevice">
+                    <span>✅ Запомнить это устройство (больше не запрашивать код)</span>
+                </label>
+                
+                <button class="btn btn-primary" onclick="verifyLogin2FA()">✅ Подтвердить вход</button>
                 <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">❌ Отмена</button>
                 <div id="twoFactorMessage" class="message"></div>
             </div>
@@ -539,13 +509,13 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">🔒 Пароль</label>
-                    <input type="password" id="unlockPassword" placeholder="Введите пароль">
+                    <input type="password" id="unlockPassword" placeholder="Введите ваш пароль">
                 </div>
                 <div class="danger-box">
                     <strong>🚨 ЭКСТРЕННАЯ БЛОКИРОВКА АКТИВНА</strong><br>
-                    Все сессии завершены. Требуется пароль для восстановления.
+                    Все сессии завершены. Требуется пароль для восстановления доступа.
                 </div>
-                <button class="btn btn-warning" onclick="unlockAccount()">🔓 Разблокировать</button>
+                <button class="btn btn-warning" onclick="unlockAccount()">🔓 Разблокировать аккаунт</button>
                 <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top:10px;">← Назад</button>
                 <div id="unlockMessage" class="message"></div>
             </div>
@@ -553,7 +523,7 @@
             <div id="authMessage" class="message"></div>
         </div>
 
-        <!-- ПАНЕЛЬ ПРОФИЛЯ (ДОВЕРЕННОЕ УСТРОЙСТВО) -->
+        <!-- ПАНЕЛЬ ПРОФИЛЯ -->
         <div id="profilePanel" style="display:none;">
             <!-- Экстренная блокировка -->
             <div class="card">
@@ -568,32 +538,8 @@
                         🚨 ЭКСТРЕННАЯ БЛОКИРОВКА
                     </button>
                 </div>
-            </div>
-
-            <!-- ЗАПРОС НА ВХОД (с кнопками Одобрить/Отклонить) -->
-            <div id="pendingRequestCard" class="pending-request-card" style="display:none;">
-                <div class="pending-badge">🔔 НОВЫЙ ЗАПРОС НА ВХОД</div>
-                <div style="text-align:center; margin-bottom:15px;">
-                    <div style="font-size:48px;">📱</div>
-                    <h3 style="color:#ffaa00;">Кто-то пытается войти</h3>
-                </div>
-                <div class="request-info" id="pendingRequestInfo">
-                    <p><strong>🌐 IP-адрес:</strong> Загрузка...</p>
-                    <p><strong>🖥️ Устройство:</strong> Загрузка...</p>
-                    <p><strong>⏰ Время запроса:</strong> Загрузка...</p>
-                </div>
-                <div class="two-factor-code" style="padding:20px;">
-                    <div style="font-size:12px; color:#00aa00;">КОД ДЛЯ ПОДТВЕРЖДЕНИЯ</div>
-                    <div class="code-display" id="pendingCodeDisplay" style="font-size:48px; letter-spacing:12px;">----</div>
-                    <div class="timer" id="pendingCodeTimer">5:00</div>
-                </div>
-                <div class="approve-buttons">
-                    <button class="btn btn-success" id="approveAndTrustBtn" onclick="approveLogin(true)">✅ Доверять этому устройству</button>
-                    <button class="btn btn-primary" id="approveOnceBtn" onclick="approveLogin(false)">🔓 Только этот раз</button>
-                    <button class="btn btn-danger" id="rejectBtn" onclick="rejectLogin()">❌ Отклонить</button>
-                </div>
-                <div class="info-text" style="margin-top:10px;">
-                    Код и кнопки действительны 5 минут
+                <div class="info-text" style="color:#ff6666; margin-top:10px;">
+                    Нажмите для мгновенной блокировки всех входов
                 </div>
             </div>
 
@@ -601,14 +547,43 @@
             <div class="card">
                 <h2 class="section-title">⭐ Доверенное устройство</h2>
                 <div class="trusted-device-card">
-                    <div class="trusted-badge">ЕДИНСТВЕННОЕ ДОВЕРЕННОЕ УСТРОЙСТВО</div>
+                    <div class="trusted-badge">ВАШЕ ДОВЕРЕННОЕ УСТРОЙСТВО</div>
                     <div id="trustedDeviceInfo" style="min-height: 80px;">
-                        <div class="info-text">Загрузка...</div>
+                        <div class="info-text">Загрузка информации об устройстве...</div>
                     </div>
+                    <button class="btn btn-secondary" onclick="changeTrustedDevice()" style="margin-top:15px;">🔄 Сменить доверенное устройство</button>
                 </div>
                 <div class="info-text" style="color:#00aa66; margin-top:10px;">
                     ✅ Только ОДНО устройство может быть доверенным.<br>
-                    Все остальные устройства требуют подтверждения с этого устройства.
+                    Все остальные устройства требуют 2FA код при входе.
+                </div>
+            </div>
+
+            <!-- 2FA Коды (отображаются на основном устройстве) -->
+            <div class="card">
+                <div class="avatar">🔐</div>
+                <h1>Коды для входа</h1>
+                <div class="subtitle">Появляются при попытке входа с нового устройства</div>
+                <div id="twoFactorSection">
+                    <div class="two-factor-code" id="codeBlock" style="display:none;">
+                        <div style="font-size:12px; color:#00aa00;">ТЕКУЩИЙ КОД ДЛЯ ВХОДА</div>
+                        <div class="code-display" id="currentCode">----</div>
+                        <div class="timer" id="codeTimer">5:00</div>
+                        <div class="info-text" style="margin-top:15px;">
+                            Код действителен 5 минут<br>
+                            Введите его на новом устройстве
+                        </div>
+                    </div>
+                    <div id="noCodeMessage" style="text-align:center; padding:30px; color:#00aa00;">
+                        <div style="font-size:48px;">🛡️</div>
+                        <p>Нет активных запросов на вход</p>
+                        <p style="font-size:12px; margin-top:10px;">Код появится здесь, когда кто-то<br>попытается войти с нового устройства</p>
+                    </div>
+                    <div class="warning-box">
+                        <strong>⚠️ ВНИМАНИЕ!</strong><br>
+                        Никогда не сообщайте этот код никому!<br>
+                        Сотрудники IT Global никогда не запрашивают коды.
+                    </div>
                 </div>
             </div>
 
@@ -626,6 +601,20 @@
 
                 <div class="qr-container" id="qrContainer"></div>
                 <div class="info-text">Отсканируйте QR-код, чтобы поделиться Global ID</div>
+            </div>
+
+            <!-- Известные устройства -->
+            <div class="card">
+                <h2 class="section-title">📱 Известные устройства</h2>
+                <div id="devicesList">
+                    <div class="info-text">Загрузка списка устройств...</div>
+                </div>
+                <button class="btn btn-secondary" onclick="forgetAllDevices()" style="margin-top:16px;">
+                    🗑 Забыть все устройства
+                </button>
+                <div class="info-text" style="color:#ffaa00;">
+                    После сброса потребуется 2FA при следующем входе с любого устройства
+                </div>
             </div>
 
             <!-- Личные данные -->
@@ -649,37 +638,81 @@
                     <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67">
                 </div>
                 <div class="form-group">
+                    <label class="form-label">СНИЛС</label>
+                    <input type="text" id="snils" placeholder="123-456-789 01">
+                </div>
+                <div class="form-group">
                     <label class="form-label">Telegram</label>
                     <input type="text" id="telegram" placeholder="@username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дополнительный email</label>
+                    <input type="email" id="additionalEmail" placeholder="additional@email.com">
+                </div>
+            </div>
+
+            <!-- Банковские данные -->
+            <div class="card">
+                <h2 class="section-title">💳 Банковские данные</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Номер карты</label>
+                    <input type="text" id="cardNumber" placeholder="2200 7012 2658 1897">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название банка</label>
+                    <input type="text" id="bankName" placeholder="ПАО Т-Банк">
+                </div>
+            </div>
+
+            <!-- Адрес проживания -->
+            <div class="card">
+                <h2 class="section-title">📍 Адрес проживания</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Страна</label>
+                    <input type="text" id="country" placeholder="Россия">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Город</label>
+                    <input type="text" id="city" placeholder="Нижнекамск">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Адрес</label>
+                    <input type="text" id="address" placeholder="ул. Ленина, д. 1, кв. 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Почтовый индекс</label>
+                    <input type="text" id="postalCode" placeholder="123456">
                 </div>
             </div>
 
             <!-- Кнопки -->
             <div class="card">
                 <div class="flex-buttons">
-                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить</button>
+                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить все данные</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Выйти</button>
                 </div>
                 <div id="profileMessage" class="message"></div>
             </div>
 
+            <!-- Информация -->
             <div class="card">
                 <h2 class="section-title">ℹ️ Что такое Global ID?</h2>
                 <p style="color:#00cc66; font-size:13px; line-height:1.6;">
-                    Global ID — уникальный идентификатор в экосистеме IT Global.<br>
-                    Используется во всех сервисах: GloBank, Айсберг.<br>
-                    <strong>Только одно устройство может быть доверенным.</strong>
+                    Global ID — это уникальный идентификатор пользователя в экосистеме IT Global.
+                    Он используется во всех сервисах: GloBank, Айсберг, и будущих продуктах.
+                    Один ID — доступ ко всем сервисам.
                 </p>
                 <div class="success-box" style="margin-top:16px;">
-                    <strong>🔒 Максимальная защита</strong><br>
-                    Вход с любого другого устройства требует подтверждения с доверенного устройства.
+                    <strong>🔒 Ваши данные защищены</strong><br>
+                    Все данные хранятся в зашифрованном виде. Только вы имеете к ним доступ.
                 </div>
             </div>
         </div>
     </div>
     
     <script type="module">
-        // ==================== КОНФИГУРАЦИЯ ====================
         const firebaseConfig = {
             apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw",
             authDomain: "glob-data.firebaseapp.com",
@@ -698,25 +731,18 @@
         const db = getFirestore();
         auth.setPersistence({ type: 'NONE' });
 
-        // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
         let currentUserData = null;
         let pendingUser = null;
         let pendingEmail = null;
-        let pendingRequestData = null;
         let codeInterval = null;
         let deviceFingerprint = null;
         let currentIP = null;
         let userStatusListener = null;
 
-        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function generateGlobalId() {
             const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
             return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        }
-
-        function generate2FACode() {
-            return Math.floor(1000 + Math.random() * 9000).toString();
         }
 
         async function getDeviceInfo() {
@@ -728,8 +754,42 @@
                 currentIP = 'unknown';
             }
             const nav = window.navigator;
-            deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}-${new Date().getTimezoneOffset()}`);
+            deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
+            
+            document.getElementById('newDeviceIp').innerText = `IP: ${currentIP}`;
+            document.getElementById('newDeviceBrowser').innerText = `Браузер: ${nav.userAgent.substring(0, 60)}...`;
+            
             return { ip: currentIP, fingerprint: deviceFingerprint };
+        }
+
+        function generate2FACode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        async function isTrustedDevice(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            const trustedDevices = data?.trustedDevices || [];
+            return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
+        }
+
+        async function addTrustedDevice(uid) {
+            const deviceInfo = {
+                fingerprint: deviceFingerprint,
+                ip: currentIP,
+                userAgent: navigator.userAgent,
+                addedAt: new Date(),
+                lastUsed: new Date()
+            };
+            await updateDoc(doc(db, "users", uid), {
+                trustedDevices: arrayUnion(deviceInfo)
+            });
+        }
+
+        async function isAccountLocked(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            return data?.accountLocked === true;
         }
 
         function showMessage(elementId, text, isError = true) {
@@ -759,156 +819,42 @@
             }
         }
 
-        // ==================== УПРАВЛЕНИЕ ДОВЕРЕННЫМ УСТРОЙСТВОМ ====================
-        async function getTrustedDevice(uid) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            const data = userDoc.data();
-            return data?.trustedDevice || null;
-        }
-
-        async function setTrustedDevice(uid, deviceInfo) {
-            await updateDoc(doc(db, "users", uid), {
-                trustedDevice: deviceInfo
-            });
-        }
-
-        async function isTrustedDevice(uid) {
-            const trusted = await getTrustedDevice(uid);
-            return trusted?.fingerprint === deviceFingerprint;
-        }
-
-        function renderTrustedDevice(device) {
-            const container = document.getElementById('trustedDeviceInfo');
-            if (!container) return;
+        function display2FACode(code, expires) {
+            const codeBlock = document.getElementById('codeBlock');
+            const noCodeMessage = document.getElementById('noCodeMessage');
+            const currentCode = document.getElementById('currentCode');
+            const codeTimer = document.getElementById('codeTimer');
             
-            if (!device) {
-                container.innerHTML = `<div class="info-text">⚠️ Доверенное устройство не установлено</div>`;
-                return;
-            }
+            if (!codeBlock || !noCodeMessage) return;
             
-            const isCurrent = device.fingerprint === deviceFingerprint;
-            const date = device.addedAt ? new Date(device.addedAt).toLocaleDateString() : 'Неизвестно';
-            
-            container.innerHTML = `
-                <div style="font-size:14px; font-weight:bold; margin-bottom:5px;">
-                    ${isCurrent ? '✅ ТЕКУЩЕЕ УСТРОЙСТВО' : '📱 ДОВЕРЕННОЕ УСТРОЙСТВО'}
-                </div>
-                <div style="font-size:11px; opacity:0.8;">
-                    ${device.userAgent ? device.userAgent.substring(0, 50) + '...' : 'Неизвестное устройство'}<br>
-                    IP: ${device.ip || 'неизвестно'}<br>
-                    Добавлено: ${date}
-                </div>
-            `;
-        }
-
-        // ==================== ОТОБРАЖЕНИЕ ЗАПРОСА НА ВХОД (С КНОПКАМИ) ====================
-        function showPendingRequest(requestData) {
-            const card = document.getElementById('pendingRequestCard');
-            const infoDiv = document.getElementById('pendingRequestInfo');
-            const codeDisplay = document.getElementById('pendingCodeDisplay');
-            const timerDiv = document.getElementById('pendingCodeTimer');
-            
-            if (!card || !requestData) return;
-            
-            card.style.display = 'block';
-            
-            infoDiv.innerHTML = `
-                <p><strong>🌐 IP-адрес:</strong> ${requestData.pendingDeviceInfo?.ip || 'неизвестен'}</p>
-                <p><strong>🖥️ Устройство:</strong> ${requestData.pendingDeviceInfo?.userAgent?.substring(0, 60) || 'неизвестно'}...</p>
-                <p><strong>⏰ Время запроса:</strong> ${new Date(requestData.pending2FACodeExpires?.toDate() - 5*60000).toLocaleString()}</p>
-            `;
-            codeDisplay.textContent = requestData.pending2FACode || '----';
+            codeBlock.style.display = 'block';
+            noCodeMessage.style.display = 'none';
+            currentCode.textContent = code;
             
             if (codeInterval) clearInterval(codeInterval);
             
-            const updateTimer = () => {
-                if (!requestData.pending2FACodeExpires) return;
-                const diff = requestData.pending2FACodeExpires.toDate() - new Date();
+            codeInterval = setInterval(() => {
+                const diff = expires.toDate() - new Date();
                 if (diff <= 0) {
                     clearInterval(codeInterval);
-                    timerDiv.textContent = '0:00';
-                    card.style.display = 'none';
+                    currentCode.textContent = 'ИСТЁК';
+                    codeTimer.textContent = 'Код истёк';
+                    setTimeout(() => {
+                        codeBlock.style.display = 'none';
+                        noCodeMessage.style.display = 'block';
+                    }, 5000);
                 } else {
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    timerDiv.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                    codeTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
                 }
-            };
-            
-            updateTimer();
-            codeInterval = setInterval(updateTimer, 1000);
+            }, 1000);
         }
 
-        function hidePendingRequest() {
-            const card = document.getElementById('pendingRequestCard');
-            if (card) card.style.display = 'none';
-            if (codeInterval) clearInterval(codeInterval);
-        }
-
-        // ==================== ОДОБРЕНИЕ/ОТКЛОНЕНИЕ ВХОДА ====================
-        window.approveLogin = async (trustDevice) => {
-            if (!pendingRequestData) return;
-            
-            try {
-                // Очищаем 2FA данные
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
-                    pendingDeviceInfo: null
-                });
-                
-                if (trustDevice) {
-                    // Добавляем устройство в доверенные
-                    const newTrustedDevice = {
-                        fingerprint: pendingRequestData.pendingDeviceInfo?.fingerprint,
-                        ip: pendingRequestData.pendingDeviceInfo?.ip,
-                        userAgent: pendingRequestData.pendingDeviceInfo?.userAgent,
-                        addedAt: new Date()
-                    };
-                    await setTrustedDevice(currentUser.uid, newTrustedDevice);
-                    renderTrustedDevice(newTrustedDevice);
-                    showMessage('profileMessage', '✅ Устройство добавлено в доверенные!', false);
-                }
-                
-                // Помечаем, что вход одобрен
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    loginApproved: true,
-                    loginApprovedForDevice: pendingRequestData.pendingDeviceInfo?.fingerprint
-                });
-                
-                hidePendingRequest();
-                pendingRequestData = null;
-                showMessage('profileMessage', '✅ Вход одобрен!', false);
-            } catch (error) {
-                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
-            }
-        };
-
-        window.rejectLogin = async () => {
-            if (!pendingRequestData) return;
-            
-            try {
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
-                    pendingDeviceInfo: null,
-                    loginRejected: true
-                });
-                
-                hidePendingRequest();
-                pendingRequestData = null;
-                showMessage('profileMessage', '❌ Вход отклонён!', false);
-            } catch (error) {
-                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
-            }
-        };
-
-        // ==================== ОТСЛЕЖИВАНИЕ ЗАПРОСОВ НА ВХОД ====================
-        function watchForPendingRequests(uid) {
+        function watchFor2FACodes(uid) {
             onSnapshot(doc(db, "users", uid), (docSnap) => {
                 const data = docSnap.data();
                 
-                // Обновление статуса блокировки
                 const statusDiv = document.getElementById('lockStatusDisplay');
                 if (statusDiv && data) {
                     if (data.accountLocked) {
@@ -918,31 +864,74 @@
                     }
                 }
                 
-                // Проверяем наличие запроса на вход
-                if (data?.pending2FACode && data.pending2FACodeExpires) {
-                    const expires = data.pending2FACodeExpires.toDate();
+                if (data?.twoFactorCode && data.twoFactorCodeExpires) {
+                    const expires = data.twoFactorCodeExpires.toDate();
                     if (expires > new Date()) {
-                        pendingRequestData = data;
-                        showPendingRequest(data);
-                    } else {
-                        hidePendingRequest();
-                        pendingRequestData = null;
+                        display2FACode(data.twoFactorCode, data.twoFactorCodeExpires);
                     }
-                } else {
-                    hidePendingRequest();
-                    pendingRequestData = null;
                 }
                 
-                // Обновление информации о доверенном устройстве
-                if (data?.trustedDevice) {
-                    renderTrustedDevice(data.trustedDevice);
+                if (data?.trustedDevices) {
+                    renderDevicesList(data.trustedDevices);
+                }
+                
+                // Отображение доверенного устройства
+                if (data?.trustedDevices && data.trustedDevices.length > 0) {
+                    const trustedDevice = data.trustedDevices[0];
+                    const isCurrent = trustedDevice.fingerprint === deviceFingerprint;
+                    document.getElementById('trustedDeviceInfo').innerHTML = `
+                        <div style="font-size:14px; font-weight:bold; margin-bottom:5px;">
+                            ${isCurrent ? '✅ ТЕКУЩЕЕ УСТРОЙСТВО' : '📱 ДОВЕРЕННОЕ УСТРОЙСТВО'}
+                        </div>
+                        <div style="font-size:11px; opacity:0.8;">
+                            ${trustedDevice.userAgent ? trustedDevice.userAgent.substring(0, 50) + '...' : 'Неизвестное устройство'}<br>
+                            IP: ${trustedDevice.ip || 'неизвестно'}<br>
+                            Добавлено: ${new Date(trustedDevice.addedAt).toLocaleDateString()}
+                        </div>
+                    `;
                 } else {
-                    renderTrustedDevice(null);
+                    document.getElementById('trustedDeviceInfo').innerHTML = '<div class="info-text">⚠️ Доверенное устройство не установлено</div>';
                 }
             });
         }
 
-        // ==================== 2FA НА НОВОМ УСТРОЙСТВЕ ====================
+        function renderDevicesList(devices) {
+            const container = document.getElementById('devicesList');
+            if (!container) return;
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<div class="info-text">Нет известных устройств</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            devices.sort((a, b) => new Date(b.lastUsed || b.addedAt) - new Date(a.lastUsed || a.addedAt));
+            
+            devices.forEach((device, index) => {
+                const isCurrent = device.fingerprint === deviceFingerprint;
+                const deviceDiv = document.createElement('div');
+                deviceDiv.className = 'device-item';
+                
+                const date = device.lastUsed || device.addedAt;
+                const dateStr = date ? new Date(date).toLocaleDateString() : 'Неизвестно';
+                
+                deviceDiv.innerHTML = `
+                    <div class="device-info-small">
+                        <div class="device-name">
+                            ${index === 0 ? '⭐ ' : '📱 '}
+                            ${device.userAgent ? device.userAgent.substring(0, 35) + '...' : 'Неизвестное устройство'}
+                        </div>
+                        <div class="device-meta">
+                            IP: ${device.ip || 'неизвестно'} | Добавлено: ${dateStr}
+                        </div>
+                    </div>
+                    ${isCurrent ? '<span class="device-current">Текущее</span>' : ''}
+                `;
+                
+                container.appendChild(deviceDiv);
+            });
+        }
+
         window.moveToNext = (input, index) => {
             if (input.value.length === 1) {
                 const next = document.getElementById(`code${index + 2}`);
@@ -954,8 +943,8 @@
         window.cancelLogin2FA = () => {
             if (pendingUser) {
                 updateDoc(doc(db, "users", pendingUser.uid), {
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
                     pendingDeviceInfo: null
                 }).catch(() => {});
             }
@@ -964,6 +953,13 @@
             document.getElementById('twoFactorLoginMode').style.display = 'none';
             ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
             pendingUser = null;
+        };
+
+        window.cancelUnlock = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('unlockMode').style.display = 'none';
+            pendingUser = null;
+            pendingEmail = null;
         };
 
         window.verifyLogin2FA = async () => {
@@ -982,31 +978,14 @@
             const userDoc = await getDoc(doc(db, "users", pendingUser.uid));
             const userData = userDoc.data();
             
-            // Проверяем, был ли вход одобрен
-            if (userData?.loginApproved && userData.loginApprovedForDevice === deviceFingerprint) {
-                // Очищаем флаги
-                await updateDoc(doc(db, "users", pendingUser.uid), {
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
-                    pendingDeviceInfo: null,
-                    loginApproved: null,
-                    loginApprovedForDevice: null
-                });
+            if (code === userData?.twoFactorCode) {
+                if (document.getElementById('trustDevice').checked) {
+                    await addTrustedDevice(pendingUser.uid);
+                }
                 
-                document.getElementById('loginMode').style.display = 'none';
-                document.getElementById('twoFactorLoginMode').style.display = 'none';
-                document.getElementById('authForm').style.display = 'none';
-                document.getElementById('profilePanel').style.display = 'block';
-                
-                await loadProfile(pendingUser);
-                startUserStatusListener(pendingUser.uid);
-                watchForPendingRequests(pendingUser.uid);
-            } else if (code === userData?.pending2FACode) {
-                // Ввод кода (старый способ)
                 await updateDoc(doc(db, "users", pendingUser.uid), {
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
-                    pendingDeviceInfo: null,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
                     online: true,
                     lastSeen: serverTimestamp(),
                     currentIP: currentIP,
@@ -1018,15 +997,15 @@
                 document.getElementById('authForm').style.display = 'none';
                 document.getElementById('profilePanel').style.display = 'block';
                 
+                ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+                
                 await loadProfile(pendingUser);
                 startUserStatusListener(pendingUser.uid);
-                watchForPendingRequests(pendingUser.uid);
             } else {
-                showMessage('twoFactorMessage', '❌ Неверный код или вход не одобрен', true);
+                showMessage('twoFactorMessage', '❌ Неверный код', true);
             }
         };
 
-        // ==================== ВХОД ====================
         window.login = async () => {
             const identifier = document.getElementById('loginIdentifier').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -1061,40 +1040,21 @@
                     return;
                 }
                 
-                pendingUser = user;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const userData = userDoc.data();
                 
-                // Проверяем, есть ли доверенное устройство
-                const trustedDevice = await getTrustedDevice(user.uid);
-                
-                // Если доверенного устройства нет - устанавливаем текущее как доверенное
-                if (!trustedDevice) {
-                    await setTrustedDevice(user.uid, {
-                        fingerprint: deviceFingerprint,
-                        ip: currentIP,
-                        userAgent: navigator.userAgent,
-                        addedAt: new Date()
-                    });
-                    
+                if (!userData?.globalIdAccess) {
                     await updateDoc(doc(db, "users", user.uid), {
-                        online: true,
-                        lastSeen: serverTimestamp(),
-                        currentIP: currentIP,
-                        currentDevice: deviceFingerprint
+                        globalIdAccess: true,
+                        globalIdLastLogin: serverTimestamp()
                     });
-                    
-                    document.getElementById('authForm').style.display = 'none';
-                    document.getElementById('profilePanel').style.display = 'block';
-                    await loadProfile(user);
-                    startUserStatusListener(user.uid);
-                    watchForPendingRequests(user.uid);
-                    return;
                 }
                 
-                // Проверяем, является ли текущее устройство доверенным
-                const isTrusted = trustedDevice.fingerprint === deviceFingerprint;
+                pendingUser = user;
                 
-                if (isTrusted) {
-                    // Доверенное устройство - вход без 2FA
+                const trusted = await isTrustedDevice(user.uid);
+                
+                if (trusted) {
                     await updateDoc(doc(db, "users", user.uid), {
                         online: true,
                         lastSeen: serverTimestamp(),
@@ -1106,49 +1066,23 @@
                     document.getElementById('profilePanel').style.display = 'block';
                     await loadProfile(user);
                     startUserStatusListener(user.uid);
-                    watchForPendingRequests(user.uid);
                 } else {
-                    // НЕДОВЕРЕННОЕ УСТРОЙСТВО - создаём запрос на доверенном устройстве
                     const code = generate2FACode();
                     const deviceInfo = {
-                        fingerprint: deviceFingerprint,
                         ip: currentIP,
                         userAgent: navigator.userAgent,
                         requestedAt: new Date()
                     };
                     
                     await updateDoc(doc(db, "users", user.uid), {
-                        pending2FACode: code,
-                        pending2FACodeExpires: new Date(Date.now() + 5 * 60 * 1000),
-                        pendingDeviceInfo: deviceInfo,
-                        loginApproved: null,
-                        loginRejected: null
+                        twoFactorCode: code,
+                        twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
+                        pendingDeviceInfo: deviceInfo
                     });
-                    
-                    document.getElementById('newDeviceInfoText').innerHTML = `
-                        <strong>IP:</strong> ${currentIP}<br>
-                        <strong>Устройство:</strong> ${navigator.userAgent.substring(0, 60)}...<br>
-                        <strong>Статус:</strong> Ожидание подтверждения с доверенного устройства
-                    `;
                     
                     document.getElementById('loginMode').style.display = 'none';
                     document.getElementById('twoFactorLoginMode').style.display = 'block';
                     document.getElementById('code1').focus();
-                    
-                    // Запускаем проверку одобрения
-                    const checkApproval = setInterval(async () => {
-                        const userDoc = await getDoc(doc(db, "users", user.uid));
-                        const data = userDoc.data();
-                        
-                        if (data?.loginApproved === true && data.loginApprovedForDevice === deviceFingerprint) {
-                            clearInterval(checkApproval);
-                            await verifyLogin2FA();
-                        } else if (data?.loginRejected === true) {
-                            clearInterval(checkApproval);
-                            showMessage('twoFactorMessage', '❌ Вход отклонён с доверенного устройства', true);
-                            setTimeout(() => cancelLogin2FA(), 2000);
-                        }
-                    }, 2000);
                 }
             } catch (error) {
                 console.error('Ошибка входа:', error);
@@ -1156,13 +1090,6 @@
             }
         };
 
-        async function isAccountLocked(uid) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            const data = userDoc.data();
-            return data?.accountLocked === true;
-        }
-
-        // ==================== РЕГИСТРАЦИЯ ====================
         window.register = async () => {
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
@@ -1189,11 +1116,12 @@
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const globalId = generateGlobalId();
                 
-                const trustedDevice = {
+                const registrationDevice = {
                     fingerprint: deviceFingerprint,
                     ip: currentIP,
                     userAgent: navigator.userAgent,
-                    addedAt: new Date()
+                    addedAt: new Date(),
+                    lastUsed: new Date()
                 };
                 
                 await setDoc(doc(db, "users", userCred.user.uid), {
@@ -1208,7 +1136,7 @@
                     globalIdAccess: true,
                     icebergAccess: true,
                     accountLocked: false,
-                    trustedDevice: trustedDevice,
+                    trustedDevices: [registrationDevice],
                     currentIP: currentIP,
                     currentDevice: deviceFingerprint
                 });
@@ -1226,7 +1154,6 @@
             }
         };
 
-        // ==================== ЭКСТРЕННАЯ БЛОКИРОВКА ====================
         window.emergencyLock = async () => {
             if (!confirm('🚨 ЭКСТРЕННАЯ БЛОКИРОВКА\n\nВсе сессии будут завершены!\nДля разблокировки потребуется пароль.\n\nПродолжить?')) {
                 return;
@@ -1240,12 +1167,14 @@
                     lockedAt: serverTimestamp(),
                     lockedBy: deviceFingerprint,
                     online: false,
-                    pending2FACode: null,
-                    pending2FACodeExpires: null
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null
                 });
                 
-                hidePendingRequest();
+                document.getElementById('codeBlock').style.display = 'none';
+                document.getElementById('noCodeMessage').style.display = 'block';
                 document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
+                
                 showMessage('profileMessage', '🚨 Аккаунт экстренно заблокирован!', false);
                 setTimeout(() => logout(), 2000);
             } catch (error) {
@@ -1253,7 +1182,6 @@
             }
         };
 
-        // ==================== РАЗБЛОКИРОВКА ====================
         window.unlockAccount = async () => {
             const password = document.getElementById('unlockPassword').value;
             
@@ -1274,8 +1202,8 @@
                     accountLocked: false,
                     lockedAt: null,
                     lockedBy: null,
-                    pending2FACode: null,
-                    pending2FACodeExpires: null,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
                     online: true,
                     lastSeen: serverTimestamp()
                 });
@@ -1286,15 +1214,14 @@
                 
                 await loadProfile(userCred.user);
                 startUserStatusListener(userCred.user.uid);
-                watchForPendingRequests(userCred.user.uid);
                 
                 showMessage('profileMessage', '✅ Аккаунт разблокирован!', false);
             } catch (error) {
+                console.error('Ошибка разблокировки:', error);
                 showMessage('unlockMessage', '❌ Неверный пароль', true);
             }
         };
 
-        // ==================== ВЫХОД ====================
         window.logout = async () => {
             if (codeInterval) clearInterval(codeInterval);
             if (userStatusListener) userStatusListener();
@@ -1307,7 +1234,53 @@
             await signOut(auth);
         };
 
-        // ==================== ОТСЛЕЖИВАНИЕ СТАТУСА ====================
+        window.changeTrustedDevice = async () => {
+            if (!currentUser) return;
+            
+            if (!confirm('⚠️ СМЕНА ДОВЕРЕННОГО УСТРОЙСТВА\n\nТекущее доверенное устройство потеряет этот статус.\nЭто устройство станет доверенным.\n\nПродолжить?')) {
+                return;
+            }
+            
+            try {
+                const newTrustedDevice = {
+                    fingerprint: deviceFingerprint,
+                    ip: currentIP,
+                    userAgent: navigator.userAgent,
+                    addedAt: new Date(),
+                    lastUsed: new Date()
+                };
+                
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    trustedDevices: [newTrustedDevice]
+                });
+                
+                showMessage('profileMessage', '✅ Доверенное устройство успешно изменено!', false);
+                await loadProfile(currentUser);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+            }
+        };
+
+        window.forgetAllDevices = async () => {
+            if (!confirm('⚠️ Забыть все известные устройства?\n\nПри следующем входе с любого устройства потребуется 2FA код.')) {
+                return;
+            }
+            
+            if (!currentUser) return;
+            
+            try {
+                const currentTrusted = currentUserData?.trustedDevices?.[0];
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    trustedDevices: currentTrusted ? [currentTrusted] : []
+                });
+                
+                showMessage('profileMessage', '✅ Все устройства забыты. Доверенное устройство осталось.', false);
+                renderDevicesList([]);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+            }
+        };
+
         function startUserStatusListener(uid) {
             if (userStatusListener) userStatusListener();
             
@@ -1323,7 +1296,6 @@
             });
         }
 
-        // ==================== НАВИГАЦИЯ ====================
         window.showRegister = () => {
             document.getElementById('loginMode').style.display = 'none';
             document.getElementById('registerMode').style.display = 'block';
@@ -1336,22 +1308,14 @@
             document.getElementById('authMessage').style.display = 'none';
         };
 
-        window.cancelUnlock = () => {
-            document.getElementById('loginMode').style.display = 'block';
-            document.getElementById('unlockMode').style.display = 'none';
-            pendingUser = null;
-            pendingEmail = null;
-        };
-
         window.copyGlobalId = () => {
             const gid = document.getElementById('globalIdValue')?.innerText;
             if (gid && gid !== '—') {
                 navigator.clipboard.writeText(gid);
-                showMessage('profileMessage', '✅ Global ID скопирован!', false);
+                showMessage('profileMessage', '✅ Global ID скопирован в буфер обмена!', false);
             }
         };
 
-        // ==================== СОХРАНЕНИЕ ПРОФИЛЯ ====================
         window.saveProfile = async () => {
             if (!currentUser) return;
             
@@ -1359,7 +1323,15 @@
                 fullName: document.getElementById('fullName')?.value || '',
                 birthDate: document.getElementById('birthDate')?.value || '',
                 phoneNumber: document.getElementById('phoneNumber')?.value || '',
+                snils: document.getElementById('snils')?.value || '',
                 telegram: document.getElementById('telegram')?.value || '',
+                additionalEmail: document.getElementById('additionalEmail')?.value || '',
+                cardNumber: document.getElementById('cardNumber')?.value || '',
+                bankName: document.getElementById('bankName')?.value || '',
+                country: document.getElementById('country')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                address: document.getElementById('address')?.value || '',
+                postalCode: document.getElementById('postalCode')?.value || '',
                 profileCompleted: true,
                 lastUpdated: serverTimestamp()
             };
@@ -1367,13 +1339,12 @@
             try {
                 await updateDoc(doc(db, "users", currentUser.uid), profileData);
                 currentUserData = { ...currentUserData, ...profileData };
-                showMessage('profileMessage', '✅ Данные сохранены!', false);
+                showMessage('profileMessage', '✅ Все данные сохранены!', false);
             } catch (error) {
-                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+                showMessage('profileMessage', '❌ Ошибка сохранения: ' + error.message, true);
             }
         };
 
-        // ==================== ЗАГРУЗКА ПРОФИЛЯ ====================
         async function loadProfile(user) {
             currentUser = user;
             
@@ -1402,7 +1373,15 @@
             document.getElementById('fullName').value = currentUserData.fullName || '';
             document.getElementById('birthDate').value = currentUserData.birthDate || '';
             document.getElementById('phoneNumber').value = currentUserData.phoneNumber || '';
+            document.getElementById('snils').value = currentUserData.snils || '';
             document.getElementById('telegram').value = currentUserData.telegram || '';
+            document.getElementById('additionalEmail').value = currentUserData.additionalEmail || '';
+            document.getElementById('cardNumber').value = currentUserData.cardNumber || '';
+            document.getElementById('bankName').value = currentUserData.bankName || '';
+            document.getElementById('country').value = currentUserData.country || '';
+            document.getElementById('city').value = currentUserData.city || '';
+            document.getElementById('address').value = currentUserData.address || '';
+            document.getElementById('postalCode').value = currentUserData.postalCode || '';
             
             const statusDiv = document.getElementById('lockStatusDisplay');
             if (currentUserData.accountLocked) {
@@ -1415,10 +1394,10 @@
                 generateQR(currentUserData.globalId);
             }
             
-            renderTrustedDevice(currentUserData.trustedDevice || null);
+            renderDevicesList(currentUserData.trustedDevices || []);
+            watchFor2FACodes(user.uid);
         }
 
-        // ==================== АВТОРИЗАЦИЯ ====================
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const isIn2FA = document.getElementById('twoFactorLoginMode').style.display === 'block';
@@ -1428,7 +1407,6 @@
                     await getDeviceInfo();
                     await loadProfile(user);
                     startUserStatusListener(user.uid);
-                    watchForPendingRequests(user.uid);
                 }
             } else {
                 if (codeInterval) clearInterval(codeInterval);
@@ -1436,7 +1414,6 @@
                 
                 currentUser = null;
                 currentUserData = null;
-                pendingRequestData = null;
                 
                 document.getElementById('authForm').style.display = 'block';
                 document.getElementById('profilePanel').style.display = 'none';
@@ -1444,7 +1421,8 @@
                 document.getElementById('registerMode').style.display = 'none';
                 document.getElementById('twoFactorLoginMode').style.display = 'none';
                 document.getElementById('unlockMode').style.display = 'none';
-                document.getElementById('pendingRequestCard').style.display = 'none';
+                document.getElementById('codeBlock').style.display = 'none';
+                document.getElementById('noCodeMessage').style.display = 'block';
                 
                 document.getElementById('loginIdentifier').value = '';
                 document.getElementById('loginPassword').value = '';
