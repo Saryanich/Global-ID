@@ -8,31 +8,17 @@
     <link rel="apple-touch-icon" href="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Global ID">
     <meta name="theme-color" content="#0A0F1E">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #001a00, #003300);
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
         }
-
-        .container {
-            max-width: 500px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
+        .container { max-width: 500px; margin: 0 auto; }
         .card {
             background: rgba(0, 34, 0, 0.9);
             backdrop-filter: blur(10px);
@@ -41,14 +27,7 @@
             margin-bottom: 20px;
             border: 1px solid #00aa00;
             box-shadow: 0 10px 40px rgba(0, 255, 0, 0.1);
-            animation: fadeIn 0.3s ease;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         h1 {
             font-size: 28px;
             font-weight: 700;
@@ -57,50 +36,18 @@
             background-clip: text;
             color: transparent;
             text-align: center;
-            margin-bottom: 8px;
         }
-
-        .subtitle {
-            text-align: center;
-            color: #00cc00;
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #00cc00;
-            margin-bottom: 6px;
-        }
-
-        input, textarea {
+        .subtitle { text-align: center; color: #00cc00; font-size: 14px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; color: #00cc00; margin-bottom: 6px; }
+        input {
             width: 100%;
             padding: 12px 14px;
             border: 1px solid #00aa00;
             border-radius: 12px;
-            font-size: 14px;
-            font-family: inherit;
             background: rgba(0, 20, 0, 0.7);
             color: #00ff00;
-            transition: all 0.2s;
         }
-
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-        }
-
-        input::placeholder {
-            color: #4a6a4a;
-        }
-
         .btn {
             width: 100%;
             padding: 12px 20px;
@@ -109,30 +56,10 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
         }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #00aa00, #00ff00);
-            color: #001a00;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #00ff00;
-            border: 1px solid #00aa00;
-        }
-
-        .btn-danger {
-            background: #aa3333;
-            color: white;
-        }
-
+        .btn-primary { background: linear-gradient(135deg, #00aa00, #00ff00); color: #001a00; }
+        .btn-secondary { background: transparent; color: #00ff00; border: 1px solid #00aa00; }
+        .btn-danger { background: #aa3333; color: white; }
         .global-id-box {
             background: rgba(0, 30, 0, 0.5);
             border-radius: 16px;
@@ -141,19 +68,14 @@
             margin: 20px 0;
             border: 2px solid #00ff00;
         }
-
         .global-id-value {
             font-size: 20px;
             font-family: monospace;
-            word-break: break-all;
             background: #001a00;
             padding: 12px;
             border-radius: 12px;
-            letter-spacing: 1px;
-            margin: 10px 0;
             color: #00ff00;
         }
-
         .qr-container {
             display: flex;
             justify-content: center;
@@ -162,23 +84,36 @@
             background: white;
             border-radius: 16px;
         }
-
-        .copy-btn {
-            background: #008800;
-            color: white;
-            margin-top: 10px;
+        .two-factor-code {
+            background: #000800;
+            border: 3px solid #00ff00;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
         }
-
-        .flex-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.6); }
+            100% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
         }
-
-        .flex-buttons button {
-            flex: 1;
+        .code-display {
+            font-size: 64px;
+            font-weight: bold;
+            letter-spacing: 20px;
+            color: #00ff00;
+            font-family: monospace;
         }
-
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid #ff9800;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 16px 0;
+            color: #ff9800;
+            font-size: 12px;
+        }
         .message {
             font-size: 12px;
             text-align: center;
@@ -187,46 +122,8 @@
             border-radius: 8px;
             display: none;
         }
-
-        .message-success {
-            background: rgba(0, 80, 0, 0.5);
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            display: block;
-        }
-
-        .message-error {
-            background: rgba(80, 0, 0, 0.5);
-            color: #ff6666;
-            border: 1px solid #ff6666;
-            display: block;
-        }
-
-        .info-text {
-            color: #00aa00;
-            font-size: 12px;
-            text-align: center;
-            margin-top: 16px;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .divider-line {
-            flex: 1;
-            height: 1px;
-            background: #00aa00;
-        }
-
-        .divider-text {
-            font-size: 11px;
-            color: #00aa00;
-        }
-
+        .message-success { background: rgba(0, 80, 0, 0.5); color: #00ff00; display: block; }
+        .message-error { background: rgba(80, 0, 0, 0.5); color: #ff6666; display: block; }
         .avatar {
             width: 80px;
             height: 80px;
@@ -237,28 +134,17 @@
             justify-content: center;
             margin: 0 auto 16px;
             font-size: 36px;
-            font-weight: bold;
             color: #001a00;
         }
-
-        .section-title {
-            font-size: 18px;
-            color: #00ff00;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #00aa00;
-        }
-
-        @media (max-width: 480px) {
-            body { padding: 12px; }
-            .card { padding: 20px; }
-            .global-id-value { font-size: 16px; }
-        }
+        .section-title { font-size: 18px; color: #00ff00; margin-bottom: 16px; border-bottom: 1px solid #00aa00; padding-bottom: 8px; }
+        .flex-buttons { display: flex; gap: 12px; margin-top: 16px; }
+        .flex-buttons button { flex: 1; }
+        .info-text { color: #00aa00; font-size: 12px; text-align: center; margin-top: 16px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Форма входа -->
+        <!-- ВХОД -->
         <div id="authForm" class="card">
             <div class="avatar">🌐</div>
             <h1>Global ID</h1>
@@ -274,12 +160,7 @@
                     <input type="password" id="loginPassword" placeholder="Введите пароль">
                 </div>
                 <button class="btn btn-primary" onclick="login()">Войти</button>
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <div class="divider-text">или</div>
-                    <div class="divider-line"></div>
-                </div>
-                <button class="btn btn-secondary" onclick="showRegister()">Создать Global ID</button>
+                <button class="btn btn-secondary" onclick="showRegister()" style="margin-top: 10px;">Создать Global ID</button>
             </div>
 
             <div id="registerMode" style="display:none;">
@@ -298,109 +179,55 @@
             <div id="authMessage" class="message"></div>
         </div>
 
-        <!-- Панель управления Global ID -->
+        <!-- ПРОФИЛЬ -->
         <div id="profilePanel" style="display:none;">
+            <!-- 2FA КОДЫ -->
+            <div class="card">
+                <div class="avatar">🔐</div>
+                <h1>Аутентификатор</h1>
+                <div class="subtitle">Коды для входа в сервисы</div>
+                
+                <div id="twoFactorSection">
+                    <div class="two-factor-code" id="codeBlock" style="display: none;">
+                        <div style="font-size: 12px; color: #00aa00;">ТЕКУЩИЙ КОД</div>
+                        <div class="code-display" id="currentCode">----</div>
+                        <div id="codeTimer" style="color: #ffaa00; margin-top: 10px;">5:00</div>
+                    </div>
+                    
+                    <div id="noCodeMessage" style="text-align: center; padding: 30px; color: #00aa00;">
+                        <div style="font-size: 40px;">🛡️</div>
+                        <p>Коды 2FA появятся здесь при входе в сервисы</p>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <strong>⚠️ ВНИМАНИЕ!</strong><br>
+                        Никогда не сообщайте этот код никому!
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПРОФИЛЬ -->
             <div class="card">
                 <div class="avatar" id="userAvatar">👤</div>
                 <h1 id="userName"></h1>
                 <div class="subtitle" id="userEmail"></div>
                 
                 <div class="global-id-box">
-                    <div style="font-size: 12px; color: #00aa00; margin-bottom: 8px;">🔑 Ваш Global ID</div>
+                    <div style="font-size: 12px; color: #00aa00;">🔑 Ваш Global ID</div>
                     <div class="global-id-value" id="globalIdValue"></div>
-                    <button class="btn btn-secondary copy-btn" onclick="copyGlobalId()">📋 Копировать Global ID</button>
+                    <button class="btn btn-secondary" onclick="copyGlobalId()" style="margin-top: 10px;">📋 Копировать</button>
                 </div>
 
                 <div class="qr-container" id="qrContainer"></div>
                 <div class="info-text">Отсканируйте QR-код, чтобы поделиться Global ID</div>
             </div>
 
-            <!-- Личные данные -->
-            <div class="card">
-                <h2 class="section-title">👤 Личные данные</h2>
-                
-                <div class="form-group">
-                    <label class="form-label">Основная почта</label>
-                    <input type="email" id="mainEmail" readonly style="background: #0a2a0a; cursor: not-allowed;">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">ФИО</label>
-                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Дата рождения</label>
-                    <input type="date" id="birthDate">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Номер телефона</label>
-                    <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">СНИЛС</label>
-                    <input type="text" id="snils" placeholder="123-456-789 01">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Telegram</label>
-                    <input type="text" id="telegram" placeholder="@username">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Дополнительный email</label>
-                    <input type="email" id="additionalEmail" placeholder="additional@email.com">
-                </div>
-            </div>
-
-            <!-- Банковские данные -->
-            <div class="card">
-                <h2 class="section-title">💳 Банковские данные</h2>
-                
-                <div class="form-group">
-                    <label class="form-label">Номер карты для получения займов</label>
-                    <input type="text" id="cardNumber" placeholder="2200 7012 2658 1897">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Название банка</label>
-                    <input type="text" id="bankName" placeholder="ПАО Т-Банк">
-                </div>
-            </div>
-
-            <!-- Адрес проживания -->
-            <div class="card">
-                <h2 class="section-title">📍 Адрес проживания</h2>
-                
-                <div class="form-group">
-                    <label class="form-label">Страна</label>
-                    <input type="text" id="country" placeholder="Россия">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Город</label>
-                    <input type="text" id="city" placeholder="Нижнекамск">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Адрес</label>
-                    <input type="text" id="address" placeholder="ул. Ленина, д. 1, кв. 1">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Почтовый индекс</label>
-                    <input type="text" id="postalCode" placeholder="123456">
-                </div>
-            </div>
-
-            <!-- Кнопки -->
+            <!-- КНОПКИ -->
             <div class="card">
                 <div class="flex-buttons">
-                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить все данные</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Выйти</button>
                 </div>
                 <div id="profileMessage" class="message"></div>
-            </div>
-
-            <div class="card">
-                <h2 class="section-title">ℹ️ Что такое Global ID?</h2>
-                <p style="font-size: 13px; color: #00cc00; line-height: 1.5;">
-                    Global ID — это уникальный идентификатор пользователя в экосистеме IT Global.
-                    Он используется во всех сервисах: GloBank, Айсберг, и будущих продуктах.
-                    Один ID — доступ ко всем сервисам.
-                </p>
             </div>
         </div>
     </div>
@@ -416,100 +243,112 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore();
-        setPersistence(auth, browserLocalPersistence);
 
         let currentUserData = null;
+        let codeInterval = null;
 
         function generateGlobalId() {
-            const digits = '0123456789';
-            const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            let result = [];
-            for (let i = 0; i < 5; i++) result.push(digits[Math.floor(Math.random() * digits.length)]);
-            for (let i = 0; i < 10; i++) {
-                let letter = letters[Math.floor(Math.random() * letters.length)];
-                letter = Math.random() > 0.5 ? letter.toUpperCase() : letter.toLowerCase();
-                result.push(letter);
-            }
-            for (let i = 0; i < 7; i++) {
-                let char = (digits + letters)[Math.floor(Math.random() * (digits + letters).length)];
-                if (char.match(/[a-zA-Z]/)) char = Math.random() > 0.5 ? char.toUpperCase() : char.toLowerCase();
-                result.push(char);
-            }
-            for (let i = result.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [result[i], result[j]] = [result[j], result[i]];
-            }
-            return result.join('');
+            const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
         }
 
         function showMessage(element, text, isError = true) {
             element.textContent = text;
             element.className = `message ${isError ? 'message-error' : 'message-success'}`;
-            element.style.display = 'block';
-            setTimeout(() => { if(element) element.style.display = 'none'; }, 3000);
+            setTimeout(() => element.style.display = 'none', 3000);
         }
 
         function generateQR(globalId) {
-            const qrContainer = document.getElementById('qrContainer');
-            qrContainer.innerHTML = '';
-            try {
-                // Генерируем текст для QR-кода в формате "Global ID: KXjJ96R1DUA7HQ92Hms6H3"
-                const qrText = `Global ID: ${globalId}`;
-                new QRCode(qrContainer, {
-                    text: qrText,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#00aa00",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            } catch(e) {
-                qrContainer.innerHTML = '<div style="padding: 20px; text-align: center;">🔲 QR-код</div>';
-            }
+            document.getElementById('qrContainer').innerHTML = '';
+            new QRCode(document.getElementById('qrContainer'), {
+                text: `Global ID: ${globalId}`,
+                width: 200, height: 200,
+                colorDark: "#00aa00", colorLight: "#ffffff"
+            });
+        }
+
+        function display2FACode(code, expires) {
+            const codeBlock = document.getElementById('codeBlock');
+            const noCodeMessage = document.getElementById('noCodeMessage');
+            const currentCode = document.getElementById('currentCode');
+            const codeTimer = document.getElementById('codeTimer');
+            
+            codeBlock.style.display = 'block';
+            noCodeMessage.style.display = 'none';
+            currentCode.textContent = code;
+            
+            if (codeInterval) clearInterval(codeInterval);
+            
+            codeInterval = setInterval(() => {
+                const diff = expires.toDate() - new Date();
+                if (diff <= 0) {
+                    clearInterval(codeInterval);
+                    currentCode.textContent = 'ИСТЁК';
+                    codeTimer.textContent = 'Код истёк';
+                    setTimeout(() => {
+                        codeBlock.style.display = 'none';
+                        noCodeMessage.style.display = 'block';
+                    }, 5000);
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    codeTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function watchFor2FACodes(uid) {
+            onSnapshot(doc(db, "users", uid), (doc) => {
+                const data = doc.data();
+                if (data?.twoFactorCode && data.twoFactorCodeExpires?.toDate() > new Date()) {
+                    display2FACode(data.twoFactorCode, data.twoFactorCodeExpires);
+                }
+            });
         }
 
         window.copyGlobalId = () => {
-            const globalId = document.getElementById('globalIdValue').innerText;
-            if (globalId && globalId !== '—') {
-                navigator.clipboard.writeText(globalId);
-                const msg = document.getElementById('profileMessage');
-                showMessage(msg, '✅ Global ID скопирован!', false);
+            const gid = document.getElementById('globalIdValue').innerText;
+            if (gid && gid !== '—') {
+                navigator.clipboard.writeText(gid);
+                showMessage(document.getElementById('profileMessage'), '✅ Global ID скопирован!', false);
             }
         };
 
-        window.saveProfile = async () => {
-            const user = auth.currentUser;
-            if (!user) return;
+        window.login = async () => {
+            const identifier = document.getElementById('loginIdentifier').value;
+            const password = document.getElementById('loginPassword').value;
+            const msgDiv = document.getElementById('authMessage');
             
-            const profileData = {
-                fullName: document.getElementById('fullName').value,
-                birthDate: document.getElementById('birthDate').value,
-                phoneNumber: document.getElementById('phoneNumber').value,
-                snils: document.getElementById('snils').value,
-                telegram: document.getElementById('telegram').value,
-                additionalEmail: document.getElementById('additionalEmail').value,
-                cardNumber: document.getElementById('cardNumber').value,
-                bankName: document.getElementById('bankName').value,
-                country: document.getElementById('country').value,
-                city: document.getElementById('city').value,
-                address: document.getElementById('address').value,
-                postalCode: document.getElementById('postalCode').value,
-                profileCompleted: true
-            };
+            if (!identifier || !password) {
+                showMessage(msgDiv, 'Заполните все поля', true);
+                return;
+            }
             
             try {
-                await updateDoc(doc(db, "users", user.uid), profileData);
-                currentUserData = { ...currentUserData, ...profileData };
-                const msg = document.getElementById('profileMessage');
-                showMessage(msg, '✅ Все данные сохранены!', false);
+                let email = identifier;
+                if (!identifier.includes('@')) {
+                    const q = query(collection(db, "users"), where("globalId", "==", identifier));
+                    const snap = await getDocs(q);
+                    if (snap.empty) { showMessage(msgDiv, 'Global ID не найден', true); return; }
+                    email = snap.docs[0].data().email;
+                }
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // Даём доступ к Global ID
+                const user = auth.currentUser;
+                await updateDoc(doc(db, "users", user.uid), {
+                    globalIdAccess: true,
+                    globalIdLastLogin: new Date()
+                });
             } catch (error) {
-                showMessage(document.getElementById('profileMessage'), '❌ Ошибка: ' + error.message, true);
+                showMessage(msgDiv, 'Неверные данные', true);
             }
         };
 
@@ -517,53 +356,41 @@
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
             const msgDiv = document.getElementById('authMessage');
+            
             if (!email || !password) { showMessage(msgDiv, 'Заполните все поля', true); return; }
-            if (password.length < 6) { showMessage(msgDiv, 'Пароль должен быть минимум 6 символов', true); return; }
+            if (password.length < 6) { showMessage(msgDiv, 'Пароль минимум 6 символов', true); return; }
+            
             try {
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const globalId = generateGlobalId();
+                
                 await setDoc(doc(db, "users", userCred.user.uid), {
-                    email: email,
-                    globalId: globalId,
+                    email, globalId,
                     createdAt: new Date(),
-                    profileCompleted: false
+                    globalIdAccess: true,
+                    icebergAccess: false // Айсберг потребует отдельный вход
                 });
-                showMessage(msgDiv, 'Global ID создан!', false);
+                
+                showMessage(msgDiv, '✅ Global ID создан!', false);
                 setTimeout(() => showLogin(), 1500);
-            } catch (error) { showMessage(msgDiv, error.message, true); }
-        };
-
-        window.login = async () => {
-            const identifier = document.getElementById('loginIdentifier').value;
-            const password = document.getElementById('loginPassword').value;
-            const msgDiv = document.getElementById('authMessage');
-            if (!identifier || !password) { showMessage(msgDiv, 'Заполните все поля', true); return; }
-            try {
-                let email = identifier;
-                if (!identifier.includes('@')) {
-                    const usersQuery = query(collection(db, "users"), where("globalId", "==", identifier));
-                    const usersSnap = await getDocs(usersQuery);
-                    if (usersSnap.empty) { showMessage(msgDiv, 'Global ID не найден', true); return; }
-                    email = usersSnap.docs[0].data().email;
-                }
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) { showMessage(msgDiv, 'Неверный email/Global ID или пароль', true); }
+            } catch (error) {
+                showMessage(msgDiv, error.message, true);
+            }
         };
 
         window.logout = async () => {
+            if (codeInterval) clearInterval(codeInterval);
             await signOut(auth);
         };
 
         window.showRegister = () => {
             document.getElementById('loginMode').style.display = 'none';
             document.getElementById('registerMode').style.display = 'block';
-            document.getElementById('authMessage').style.display = 'none';
         };
-
+        
         window.showLogin = () => {
             document.getElementById('loginMode').style.display = 'block';
             document.getElementById('registerMode').style.display = 'none';
-            document.getElementById('authMessage').style.display = 'none';
         };
 
         async function loadProfile() {
@@ -576,37 +403,22 @@
             if (!currentUserData) {
                 const globalId = generateGlobalId();
                 await setDoc(doc(db, "users", user.uid), {
-                    email: user.email,
-                    globalId: globalId,
+                    email: user.email, globalId,
                     createdAt: new Date(),
-                    profileCompleted: false
+                    globalIdAccess: true,
+                    icebergAccess: false
                 });
                 currentUserData = { globalId, email: user.email };
             }
             
             document.getElementById('userName').innerText = currentUserData.fullName || user.email.split('@')[0];
             document.getElementById('userEmail').innerText = user.email;
-            document.getElementById('userAvatar').innerText = (currentUserData.fullName?.charAt(0) || user.email.charAt(0)).toUpperCase();
+            document.getElementById('userAvatar').innerText = (currentUserData.fullName || user.email).charAt(0).toUpperCase();
             document.getElementById('globalIdValue').innerText = currentUserData.globalId || '—';
             
-            // Заполняем все поля
-            document.getElementById('mainEmail').value = user.email;
-            document.getElementById('fullName').value = currentUserData.fullName || '';
-            document.getElementById('birthDate').value = currentUserData.birthDate || '';
-            document.getElementById('phoneNumber').value = currentUserData.phoneNumber || '';
-            document.getElementById('snils').value = currentUserData.snils || '';
-            document.getElementById('telegram').value = currentUserData.telegram || '';
-            document.getElementById('additionalEmail').value = currentUserData.additionalEmail || '';
-            document.getElementById('cardNumber').value = currentUserData.cardNumber || '';
-            document.getElementById('bankName').value = currentUserData.bankName || '';
-            document.getElementById('country').value = currentUserData.country || '';
-            document.getElementById('city').value = currentUserData.city || '';
-            document.getElementById('address').value = currentUserData.address || '';
-            document.getElementById('postalCode').value = currentUserData.postalCode || '';
+            if (currentUserData.globalId) generateQR(currentUserData.globalId);
             
-            if (currentUserData.globalId) {
-                generateQR(currentUserData.globalId);
-            }
+            watchFor2FACodes(user.uid);
         }
 
         onAuthStateChanged(auth, async (user) => {
@@ -615,10 +427,11 @@
                 document.getElementById('profilePanel').style.display = 'block';
                 await loadProfile();
             } else {
+                if (codeInterval) clearInterval(codeInterval);
                 document.getElementById('authForm').style.display = 'block';
                 document.getElementById('profilePanel').style.display = 'none';
-                document.getElementById('loginIdentifier').value = '';
-                document.getElementById('loginPassword').value = '';
+                document.getElementById('codeBlock').style.display = 'none';
+                document.getElementById('noCodeMessage').style.display = 'block';
             }
         });
     </script>
