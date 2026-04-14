@@ -47,7 +47,11 @@
             border-radius: 12px;
             background: rgba(0, 20, 0, 0.7);
             color: #00ff00;
+            font-size: 14px;
         }
+        input:focus { outline: none; border-color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
+        input::placeholder { color: #4a6a4a; }
+        input[readonly] { background: #0a2a0a; cursor: not-allowed; color: #00aa00; }
         .btn {
             width: 100%;
             padding: 12px 20px;
@@ -56,10 +60,13 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s;
         }
+        .btn:active { transform: scale(0.97); }
         .btn-primary { background: linear-gradient(135deg, #00aa00, #00ff00); color: #001a00; }
         .btn-secondary { background: transparent; color: #00ff00; border: 1px solid #00aa00; }
         .btn-danger { background: #aa3333; color: white; }
+        .btn-warning { background: #ff9800; color: #001a00; }
         .global-id-box {
             background: rgba(0, 30, 0, 0.5);
             border-radius: 16px;
@@ -75,6 +82,7 @@
             padding: 12px;
             border-radius: 12px;
             color: #00ff00;
+            word-break: break-all;
         }
         .qr-container {
             display: flex;
@@ -105,6 +113,23 @@
             color: #00ff00;
             font-family: monospace;
         }
+        .code-input-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            border: 2px solid #00aa00;
+            border-radius: 12px;
+            background: #001a00;
+            color: #00ff00;
+        }
         .warning-box {
             background: rgba(255, 152, 0, 0.1);
             border: 1px solid #ff9800;
@@ -112,6 +137,15 @@
             padding: 12px;
             margin: 16px 0;
             color: #ff9800;
+            font-size: 12px;
+        }
+        .danger-box {
+            background: rgba(170, 51, 51, 0.1);
+            border: 1px solid #aa3333;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 16px 0;
+            color: #ff6666;
             font-size: 12px;
         }
         .message {
@@ -136,15 +170,62 @@
             font-size: 36px;
             color: #001a00;
         }
-        .section-title { font-size: 18px; color: #00ff00; margin-bottom: 16px; border-bottom: 1px solid #00aa00; padding-bottom: 8px; }
+        .section-title { 
+            font-size: 18px; 
+            color: #00ff00; 
+            margin-bottom: 16px; 
+            border-bottom: 1px solid #00aa00; 
+            padding-bottom: 8px;
+        }
         .flex-buttons { display: flex; gap: 12px; margin-top: 16px; }
         .flex-buttons button { flex: 1; }
         .info-text { color: #00aa00; font-size: 12px; text-align: center; margin-top: 16px; }
+        .device-info {
+            background: rgba(0, 40, 0, 0.5);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #00cc00;
+        }
+        .lock-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .lock-active { background: #aa3333; color: white; }
+        .lock-inactive { background: #00aa00; color: white; }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #00cc00;
+            font-size: 13px;
+            margin: 16px 0;
+            cursor: pointer;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: #00aa00;
+        }
+        .divider-text {
+            font-size: 11px;
+            color: #00aa00;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- ВХОД -->
+        <!-- ФОРМА ВХОДА -->
         <div id="authForm" class="card">
             <div class="avatar">🌐</div>
             <h1>Global ID</h1>
@@ -160,7 +241,14 @@
                     <input type="password" id="loginPassword" placeholder="Введите пароль">
                 </div>
                 <button class="btn btn-primary" onclick="login()">Войти</button>
-                <button class="btn btn-secondary" onclick="showRegister()" style="margin-top: 10px;">Создать Global ID</button>
+                
+                <div class="divider">
+                    <div class="divider-line"></div>
+                    <div class="divider-text">или</div>
+                    <div class="divider-line"></div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="showRegister()">Создать Global ID</button>
             </div>
 
             <div id="registerMode" style="display:none;">
@@ -173,7 +261,62 @@
                     <input type="password" id="regPassword" placeholder="Введите пароль">
                 </div>
                 <button class="btn btn-primary" onclick="register()">Создать Global ID</button>
-                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 10px;">Назад</button>
+                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 10px;">← Назад к входу</button>
+            </div>
+
+            <!-- 2FA ЭКРАН -->
+            <div id="twoFactorMode" style="display:none;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+                    <h3 style="color: #00ff00; margin-bottom: 8px;">Подтверждение входа</h3>
+                    <p style="color: #00cc00; font-size: 13px;">Введите код из приложения Global ID</p>
+                </div>
+                
+                <div class="code-input-container">
+                    <input type="text" class="code-input" maxlength="1" id="code1" oninput="moveToNext(this, 0)">
+                    <input type="text" class="code-input" maxlength="1" id="code2" oninput="moveToNext(this, 1)">
+                    <input type="text" class="code-input" maxlength="1" id="code3" oninput="moveToNext(this, 2)">
+                    <input type="text" class="code-input" maxlength="1" id="code4" oninput="moveToNext(this, 3)">
+                </div>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Внимание!</strong><br>
+                    Никогда не сообщайте этот код никому.
+                </div>
+                
+                <label class="checkbox-label">
+                    <input type="checkbox" id="trustDevice">
+                    <span>✅ Запомнить это устройство</span>
+                </label>
+                
+                <button class="btn btn-primary" onclick="verify2FA()">Подтвердить</button>
+                <button class="btn btn-secondary" onclick="cancel2FA()" style="margin-top: 10px;">Отмена</button>
+                
+                <div id="twoFactorMessage" class="message"></div>
+            </div>
+
+            <!-- ЭКРАН РАЗБЛОКИРОВКИ -->
+            <div id="unlockMode" style="display:none;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+                    <h3 style="color: #ff6666; margin-bottom: 8px;">Доступ заблокирован</h3>
+                    <p style="color: #ff9800; font-size: 13px;">Введите пароль для разблокировки</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" id="unlockPassword" placeholder="Введите пароль">
+                </div>
+                
+                <div class="danger-box">
+                    <strong>🚨 Экстренная блокировка активна</strong><br>
+                    Все сессии завершены. Требуется пароль для восстановления доступа.
+                </div>
+                
+                <button class="btn btn-warning" onclick="unlockAccount()">Разблокировать</button>
+                <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top: 10px;">Отмена</button>
+                
+                <div id="unlockMessage" class="message"></div>
             </div>
 
             <div id="authMessage" class="message"></div>
@@ -181,6 +324,24 @@
 
         <!-- ПРОФИЛЬ -->
         <div id="profilePanel" style="display:none;">
+            <!-- СТАТУС БЕЗОПАСНОСТИ -->
+            <div class="card">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="color: #00ff00; margin-bottom: 8px;">🛡️ Статус безопасности</h3>
+                        <div id="lockStatusDisplay">
+                            <span class="lock-status lock-inactive">● Аккаунт активен</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="emergencyLock()" style="width: auto; padding: 8px 16px;">
+                        🚨 Экстренная блокировка
+                    </button>
+                </div>
+                <div class="device-info" id="deviceInfo">
+                    Загрузка информации об устройстве...
+                </div>
+            </div>
+
             <!-- 2FA КОДЫ -->
             <div class="card">
                 <div class="avatar">🔐</div>
@@ -206,7 +367,7 @@
                 </div>
             </div>
 
-            <!-- ПРОФИЛЬ -->
+            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
             <div class="card">
                 <div class="avatar" id="userAvatar">👤</div>
                 <h1 id="userName"></h1>
@@ -222,12 +383,93 @@
                 <div class="info-text">Отсканируйте QR-код, чтобы поделиться Global ID</div>
             </div>
 
+            <!-- ЛИЧНЫЕ ДАННЫЕ (ТОЛЬКО ОРИГИНАЛЬНЫЕ ПОЛЯ) -->
+            <div class="card">
+                <h2 class="section-title">👤 Личные данные</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Основная почта</label>
+                    <input type="email" id="mainEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ФИО</label>
+                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дата рождения</label>
+                    <input type="date" id="birthDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Номер телефона</label>
+                    <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">СНИЛС</label>
+                    <input type="text" id="snils" placeholder="123-456-789 01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telegram</label>
+                    <input type="text" id="telegram" placeholder="@username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дополнительный email</label>
+                    <input type="email" id="additionalEmail" placeholder="additional@email.com">
+                </div>
+            </div>
+
+            <!-- БАНКОВСКИЕ ДАННЫЕ -->
+            <div class="card">
+                <h2 class="section-title">💳 Банковские данные</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Номер карты для получения займов</label>
+                    <input type="text" id="cardNumber" placeholder="2200 7012 2658 1897">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название банка</label>
+                    <input type="text" id="bankName" placeholder="ПАО Т-Банк">
+                </div>
+            </div>
+
+            <!-- АДРЕС ПРОЖИВАНИЯ -->
+            <div class="card">
+                <h2 class="section-title">📍 Адрес проживания</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Страна</label>
+                    <input type="text" id="country" placeholder="Россия">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Город</label>
+                    <input type="text" id="city" placeholder="Нижнекамск">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Адрес</label>
+                    <input type="text" id="address" placeholder="ул. Ленина, д. 1, кв. 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Почтовый индекс</label>
+                    <input type="text" id="postalCode" placeholder="123456">
+                </div>
+            </div>
+
             <!-- КНОПКИ -->
             <div class="card">
                 <div class="flex-buttons">
+                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить все данные</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Выйти</button>
                 </div>
                 <div id="profileMessage" class="message"></div>
+            </div>
+
+            <!-- ИНФОРМАЦИЯ -->
+            <div class="card">
+                <h2 class="section-title">ℹ️ Что такое Global ID?</h2>
+                <p style="color: #00cc00; font-size: 13px; line-height: 1.5;">
+                    Global ID — это уникальный идентификатор пользователя в экосистеме IT Global.
+                    Он используется во всех сервисах: GloBank, Айсберг, и будущих продуктах.
+                    Один ID — доступ ко всем сервисам.
+                </p>
             </div>
         </div>
     </div>
@@ -244,24 +486,50 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore();
+        
+        auth.setPersistence({ type: 'NONE' });
 
         let currentUserData = null;
         let codeInterval = null;
+        let pendingUser = null;
+        let current2FACode = null;
+        let currentIP = null;
+        let deviceFingerprint = null;
+
+        async function getDeviceInfo() {
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                currentIP = ipData.ip;
+            } catch(e) {
+                currentIP = 'unknown';
+            }
+            
+            const nav = window.navigator;
+            deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
+            
+            return { ip: currentIP, fingerprint: deviceFingerprint };
+        }
 
         function generateGlobalId() {
             const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
             return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
         }
 
+        function generate2FACode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
         function showMessage(element, text, isError = true) {
+            if (typeof element === 'string') element = document.getElementById(element);
             element.textContent = text;
             element.className = `message ${isError ? 'message-error' : 'message-success'}`;
-            setTimeout(() => element.style.display = 'none', 3000);
+            setTimeout(() => element.style.display = 'none', 4000);
         }
 
         function generateQR(globalId) {
@@ -272,6 +540,337 @@
                 colorDark: "#00aa00", colorLight: "#ffffff"
             });
         }
+
+        async function isDeviceKnown(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            const knownDevices = data?.knownDevices || [];
+            return knownDevices.some(d => d.fingerprint === deviceFingerprint || d.ip === currentIP);
+        }
+
+        async function isAccountLocked(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            return data?.accountLocked || false;
+        }
+
+        async function addKnownDevice(uid) {
+            const deviceInfo = {
+                fingerprint: deviceFingerprint,
+                ip: currentIP,
+                userAgent: navigator.userAgent,
+                addedAt: new Date(),
+                lastUsed: new Date()
+            };
+            
+            await updateDoc(doc(db, "users", uid), {
+                knownDevices: arrayUnion(deviceInfo)
+            });
+        }
+
+        window.moveToNext = (input, index) => {
+            if (input.value.length === 1) {
+                const next = document.getElementById(`code${index + 2}`);
+                if (next) next.focus();
+            }
+        };
+
+        async function send2FACode(user) {
+            const code = generate2FACode();
+            current2FACode = code;
+            
+            await updateDoc(doc(db, "users", user.uid), {
+                twoFactorCode: code,
+                twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000)
+            });
+            
+            return code;
+        }
+
+        window.cancel2FA = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('twoFactorMode').style.display = 'none';
+            ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+            pendingUser = null;
+        };
+
+        window.cancelUnlock = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('unlockMode').style.display = 'none';
+            pendingUser = null;
+        };
+
+        window.verify2FA = async () => {
+            const code = ['code1','code2','code3','code4'].map(id => document.getElementById(id).value).join('');
+            const msgDiv = document.getElementById('twoFactorMessage');
+            
+            if (code.length !== 4) {
+                showMessage(msgDiv, 'Введите 4 цифры', true);
+                return;
+            }
+            
+            if (code === current2FACode) {
+                if (document.getElementById('trustDevice').checked && pendingUser) {
+                    await addKnownDevice(pendingUser.uid);
+                }
+                
+                if (pendingUser) {
+                    await updateDoc(doc(db, "users", pendingUser.uid), {
+                        online: true,
+                        lastSeen: serverTimestamp(),
+                        twoFactorCode: null,
+                        twoFactorCodeExpires: null,
+                        currentIP: currentIP,
+                        currentDevice: deviceFingerprint
+                    });
+                }
+                
+                document.getElementById('loginMode').style.display = 'none';
+                document.getElementById('twoFactorMode').style.display = 'none';
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('profilePanel').style.display = 'block';
+                
+                ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+                
+                await loadProfile(pendingUser);
+            } else {
+                showMessage(msgDiv, '❌ Неверный код', true);
+            }
+        };
+
+        window.login = async () => {
+            const identifier = document.getElementById('loginIdentifier').value;
+            const password = document.getElementById('loginPassword').value;
+            const msgDiv = document.getElementById('authMessage');
+            
+            if (!identifier || !password) {
+                showMessage(msgDiv, 'Заполните все поля', true);
+                return;
+            }
+            
+            await getDeviceInfo();
+            
+            try {
+                let email = identifier;
+                if (!identifier.includes('@')) {
+                    const q = query(collection(db, "users"), where("globalId", "==", identifier));
+                    const snap = await getDocs(q);
+                    if (snap.empty) {
+                        showMessage(msgDiv, 'Global ID не найден', true);
+                        return;
+                    }
+                    email = snap.docs[0].data().email;
+                }
+                
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCred.user;
+                
+                if (await isAccountLocked(user.uid)) {
+                    await signOut(auth);
+                    pendingUser = user;
+                    document.getElementById('loginMode').style.display = 'none';
+                    document.getElementById('unlockMode').style.display = 'block';
+                    showMessage('unlockMessage', '🔒 Аккаунт заблокирован. Введите пароль для разблокировки.', true);
+                    return;
+                }
+                
+                const deviceKnown = await isDeviceKnown(user.uid);
+                
+                if (deviceKnown) {
+                    await updateDoc(doc(db, "users", user.uid), {
+                        globalIdAccess: true,
+                        globalIdLastLogin: serverTimestamp(),
+                        online: true,
+                        lastSeen: serverTimestamp(),
+                        currentIP: currentIP
+                    });
+                    
+                    document.getElementById('authForm').style.display = 'none';
+                    document.getElementById('profilePanel').style.display = 'block';
+                    await loadProfile(user);
+                } else {
+                    pendingUser = user;
+                    await send2FACode(user);
+                    document.getElementById('loginMode').style.display = 'none';
+                    document.getElementById('twoFactorMode').style.display = 'block';
+                    document.getElementById('code1').focus();
+                }
+            } catch (error) {
+                showMessage(msgDiv, 'Неверные данные', true);
+            }
+        };
+
+        window.unlockAccount = async () => {
+            const password = document.getElementById('unlockPassword').value;
+            const msgDiv = document.getElementById('unlockMessage');
+            
+            if (!password || !pendingUser) {
+                showMessage(msgDiv, 'Введите пароль', true);
+                return;
+            }
+            
+            try {
+                const email = pendingUser.email;
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                await updateDoc(doc(db, "users", pendingUser.uid), {
+                    accountLocked: false,
+                    lockedAt: null,
+                    lockedBy: null
+                });
+                
+                document.getElementById('unlockMode').style.display = 'none';
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('profilePanel').style.display = 'block';
+                
+                await loadProfile(pendingUser);
+                
+                showMessage('profileMessage', '✅ Аккаунт разблокирован', false);
+            } catch (error) {
+                showMessage(msgDiv, '❌ Неверный пароль', true);
+            }
+        };
+
+        window.emergencyLock = async () => {
+            if (!confirm('🚨 ЭКСТРЕННАЯ БЛОКИРОВКА\n\nВы уверены? Все сессии будут завершены. Для разблокировки потребуется пароль.')) {
+                return;
+            }
+            
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            try {
+                await updateDoc(doc(db, "users", user.uid), {
+                    accountLocked: true,
+                    lockedAt: serverTimestamp(),
+                    lockedBy: deviceFingerprint,
+                    online: false,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
+                    knownDevices: [{
+                        fingerprint: deviceFingerprint,
+                        ip: currentIP,
+                        userAgent: navigator.userAgent,
+                        addedAt: new Date(),
+                        lastUsed: new Date()
+                    }]
+                });
+                
+                showMessage('profileMessage', '🚨 Аккаунт экстренно заблокирован! Все сессии завершены.', false);
+                document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 Аккаунт заблокирован</span>';
+            } catch (error) {
+                showMessage('profileMessage', 'Ошибка блокировки: ' + error.message, true);
+            }
+        };
+
+        window.register = async () => {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const msgDiv = document.getElementById('authMessage');
+            
+            if (!email || !password) {
+                showMessage(msgDiv, 'Заполните все поля', true);
+                return;
+            }
+            if (password.length < 6) {
+                showMessage(msgDiv, 'Пароль минимум 6 символов', true);
+                return;
+            }
+            
+            await getDeviceInfo();
+            
+            try {
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                const globalId = generateGlobalId();
+                
+                await setDoc(doc(db, "users", userCred.user.uid), {
+                    email, globalId,
+                    nickname: email.split('@')[0],
+                    createdAt: serverTimestamp(),
+                    contacts: [],
+                    groups: [],
+                    online: true,
+                    lastSeen: serverTimestamp(),
+                    globalIdAccess: true,
+                    icebergAccess: false,
+                    accountLocked: false,
+                    knownDevices: [{
+                        fingerprint: deviceFingerprint,
+                        ip: currentIP,
+                        userAgent: navigator.userAgent,
+                        addedAt: new Date(),
+                        lastUsed: new Date()
+                    }],
+                    currentIP: currentIP,
+                    profileCompleted: false
+                });
+                
+                showMessage(msgDiv, '✅ Global ID создан!', false);
+                setTimeout(() => showLogin(), 1500);
+            } catch (error) {
+                showMessage(msgDiv, error.message, true);
+            }
+        };
+
+        window.saveProfile = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            const profileData = {
+                fullName: document.getElementById('fullName').value,
+                birthDate: document.getElementById('birthDate').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                snils: document.getElementById('snils').value,
+                telegram: document.getElementById('telegram').value,
+                additionalEmail: document.getElementById('additionalEmail').value,
+                cardNumber: document.getElementById('cardNumber').value,
+                bankName: document.getElementById('bankName').value,
+                country: document.getElementById('country').value,
+                city: document.getElementById('city').value,
+                address: document.getElementById('address').value,
+                postalCode: document.getElementById('postalCode').value,
+                profileCompleted: true,
+                lastUpdated: serverTimestamp()
+            };
+            
+            try {
+                await updateDoc(doc(db, "users", user.uid), profileData);
+                currentUserData = { ...currentUserData, ...profileData };
+                showMessage('profileMessage', '✅ Все данные сохранены!', false);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+            }
+        };
+
+        window.logout = async () => {
+            if (codeInterval) clearInterval(codeInterval);
+            const user = auth.currentUser;
+            if (user) {
+                await updateDoc(doc(db, "users", user.uid), {
+                    online: false,
+                    lastSeen: serverTimestamp()
+                });
+            }
+            await signOut(auth);
+        };
+
+        window.showRegister = () => {
+            document.getElementById('loginMode').style.display = 'none';
+            document.getElementById('registerMode').style.display = 'block';
+        };
+        
+        window.showLogin = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('registerMode').style.display = 'none';
+        };
+
+        window.copyGlobalId = () => {
+            const gid = document.getElementById('globalIdValue').innerText;
+            if (gid && gid !== '—') {
+                navigator.clipboard.writeText(gid);
+                showMessage('profileMessage', '✅ Global ID скопирован!', false);
+            }
+        };
 
         function display2FACode(code, expires) {
             const codeBlock = document.getElementById('codeBlock');
@@ -309,93 +908,20 @@
                 if (data?.twoFactorCode && data.twoFactorCodeExpires?.toDate() > new Date()) {
                     display2FACode(data.twoFactorCode, data.twoFactorCodeExpires);
                 }
+                
+                if (data) {
+                    const statusDiv = document.getElementById('lockStatusDisplay');
+                    if (data.accountLocked) {
+                        statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 Аккаунт заблокирован</span>';
+                    } else {
+                        statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
+                    }
+                }
             });
         }
 
-        window.copyGlobalId = () => {
-            const gid = document.getElementById('globalIdValue').innerText;
-            if (gid && gid !== '—') {
-                navigator.clipboard.writeText(gid);
-                showMessage(document.getElementById('profileMessage'), '✅ Global ID скопирован!', false);
-            }
-        };
-
-        window.login = async () => {
-            const identifier = document.getElementById('loginIdentifier').value;
-            const password = document.getElementById('loginPassword').value;
-            const msgDiv = document.getElementById('authMessage');
-            
-            if (!identifier || !password) {
-                showMessage(msgDiv, 'Заполните все поля', true);
-                return;
-            }
-            
-            try {
-                let email = identifier;
-                if (!identifier.includes('@')) {
-                    const q = query(collection(db, "users"), where("globalId", "==", identifier));
-                    const snap = await getDocs(q);
-                    if (snap.empty) { showMessage(msgDiv, 'Global ID не найден', true); return; }
-                    email = snap.docs[0].data().email;
-                }
-                
-                await signInWithEmailAndPassword(auth, email, password);
-                
-                // Даём доступ к Global ID
-                const user = auth.currentUser;
-                await updateDoc(doc(db, "users", user.uid), {
-                    globalIdAccess: true,
-                    globalIdLastLogin: new Date()
-                });
-            } catch (error) {
-                showMessage(msgDiv, 'Неверные данные', true);
-            }
-        };
-
-        window.register = async () => {
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const msgDiv = document.getElementById('authMessage');
-            
-            if (!email || !password) { showMessage(msgDiv, 'Заполните все поля', true); return; }
-            if (password.length < 6) { showMessage(msgDiv, 'Пароль минимум 6 символов', true); return; }
-            
-            try {
-                const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                const globalId = generateGlobalId();
-                
-                await setDoc(doc(db, "users", userCred.user.uid), {
-                    email, globalId,
-                    createdAt: new Date(),
-                    globalIdAccess: true,
-                    icebergAccess: false // Айсберг потребует отдельный вход
-                });
-                
-                showMessage(msgDiv, '✅ Global ID создан!', false);
-                setTimeout(() => showLogin(), 1500);
-            } catch (error) {
-                showMessage(msgDiv, error.message, true);
-            }
-        };
-
-        window.logout = async () => {
-            if (codeInterval) clearInterval(codeInterval);
-            await signOut(auth);
-        };
-
-        window.showRegister = () => {
-            document.getElementById('loginMode').style.display = 'none';
-            document.getElementById('registerMode').style.display = 'block';
-        };
-        
-        window.showLogin = () => {
-            document.getElementById('loginMode').style.display = 'block';
-            document.getElementById('registerMode').style.display = 'none';
-        };
-
-        async function loadProfile() {
-            const user = auth.currentUser;
-            if (!user) return;
+        async function loadProfile(user) {
+            await getDeviceInfo();
             
             const userDoc = await getDoc(doc(db, "users", user.uid));
             currentUserData = userDoc.data();
@@ -404,17 +930,58 @@
                 const globalId = generateGlobalId();
                 await setDoc(doc(db, "users", user.uid), {
                     email: user.email, globalId,
-                    createdAt: new Date(),
+                    createdAt: serverTimestamp(),
                     globalIdAccess: true,
-                    icebergAccess: false
+                    icebergAccess: false,
+                    accountLocked: false,
+                    knownDevices: [{
+                        fingerprint: deviceFingerprint,
+                        ip: currentIP,
+                        userAgent: navigator.userAgent,
+                        addedAt: new Date()
+                    }]
                 });
                 currentUserData = { globalId, email: user.email };
             }
             
-            document.getElementById('userName').innerText = currentUserData.fullName || user.email.split('@')[0];
+            document.getElementById('userName').innerText = currentUserData.fullName || currentUserData.nickname || user.email.split('@')[0];
             document.getElementById('userEmail').innerText = user.email;
-            document.getElementById('userAvatar').innerText = (currentUserData.fullName || user.email).charAt(0).toUpperCase();
+            document.getElementById('userAvatar').innerText = (currentUserData.fullName || currentUserData.nickname || user.email).charAt(0).toUpperCase();
             document.getElementById('globalIdValue').innerText = currentUserData.globalId || '—';
+            
+            // Заполняем ТОЛЬКО оригинальные поля
+            document.getElementById('mainEmail').value = user.email;
+            document.getElementById('fullName').value = currentUserData.fullName || '';
+            document.getElementById('birthDate').value = currentUserData.birthDate || '';
+            document.getElementById('phoneNumber').value = currentUserData.phoneNumber || '';
+            document.getElementById('snils').value = currentUserData.snils || '';
+            document.getElementById('telegram').value = currentUserData.telegram || '';
+            document.getElementById('additionalEmail').value = currentUserData.additionalEmail || '';
+            document.getElementById('cardNumber').value = currentUserData.cardNumber || '';
+            document.getElementById('bankName').value = currentUserData.bankName || '';
+            document.getElementById('country').value = currentUserData.country || '';
+            document.getElementById('city').value = currentUserData.city || '';
+            document.getElementById('address').value = currentUserData.address || '';
+            document.getElementById('postalCode').value = currentUserData.postalCode || '';
+            
+            // Информация об устройстве
+            const knownDevices = currentUserData.knownDevices || [];
+            const isKnown = knownDevices.some(d => d.fingerprint === deviceFingerprint || d.ip === currentIP);
+            
+            document.getElementById('deviceInfo').innerHTML = `
+                <strong>Текущее устройство:</strong> ${isKnown ? '✅ Известное' : '🆕 Новое'}<br>
+                <strong>IP:</strong> ${currentIP}<br>
+                <strong>Известных устройств:</strong> ${knownDevices.length}<br>
+                <strong>Статус:</strong> ${currentUserData.accountLocked ? '🔒 ЗАБЛОКИРОВАН' : '✅ Активен'}
+            `;
+            
+            // Статус блокировки
+            const statusDiv = document.getElementById('lockStatusDisplay');
+            if (currentUserData.accountLocked) {
+                statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 Аккаунт заблокирован</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
+            }
             
             if (currentUserData.globalId) generateQR(currentUserData.globalId);
             
@@ -425,15 +992,23 @@
             if (user) {
                 document.getElementById('authForm').style.display = 'none';
                 document.getElementById('profilePanel').style.display = 'block';
-                await loadProfile();
+                await loadProfile(user);
             } else {
                 if (codeInterval) clearInterval(codeInterval);
                 document.getElementById('authForm').style.display = 'block';
                 document.getElementById('profilePanel').style.display = 'none';
                 document.getElementById('codeBlock').style.display = 'none';
                 document.getElementById('noCodeMessage').style.display = 'block';
+                document.getElementById('loginIdentifier').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginMode').style.display = 'block';
+                document.getElementById('registerMode').style.display = 'none';
+                document.getElementById('twoFactorMode').style.display = 'none';
+                document.getElementById('unlockMode').style.display = 'none';
             }
         });
+
+        getDeviceInfo();
     </script>
 </body>
 </html>
