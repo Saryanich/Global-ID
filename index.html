@@ -11,381 +11,1365 @@
     <meta name="theme-color" content="#0A0F1E">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
+        /* ========== СБРОС И БАЗА ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #001a00, #003300);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #001a00 0%, #003300 50%, #001a00 100%);
             min-height: 100vh;
             padding: 20px;
+            position: relative;
+            animation: bgPulse 8s ease-in-out infinite;
         }
-        .container { max-width: 500px; margin: 0 auto; }
+        @keyframes bgPulse {
+            0%, 100% { background: linear-gradient(135deg, #001a00, #003300, #001a00); }
+            50% { background: linear-gradient(135deg, #002200, #004400, #002200); }
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .container { max-width: 520px; margin: 0 auto; position: relative; }
+        
+        /* ========== КАРТОЧКИ ========== */
         .card {
-            background: rgba(0, 34, 0, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 24px;
+            background: rgba(0, 34, 0, 0.92);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 28px 24px;
             margin-bottom: 20px;
-            border: 1px solid #00aa00;
-            box-shadow: 0 10px 40px rgba(0, 255, 0, 0.1);
+            border: 1.5px solid #00aa00;
+            box-shadow: 0 15px 50px rgba(0, 255, 0, 0.15), 0 0 0 1px rgba(0, 255, 0, 0.1) inset;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: cardGlow 3s ease-in-out infinite alternate;
         }
+        @keyframes cardGlow {
+            from { box-shadow: 0 15px 50px rgba(0, 255, 0, 0.15), 0 0 0 1px rgba(0, 255, 0, 0.1) inset; }
+            to { box-shadow: 0 20px 60px rgba(0, 255, 0, 0.25), 0 0 0 2px rgba(0, 255, 0, 0.15) inset; }
+        }
+        .card:hover { transform: translateY(-3px); }
+        
+        /* ========== ЛОГОТИП ========== */
+        .logo-img {
+            display: block;
+            margin: 0 auto 16px;
+            width: 100px;
+            height: 100px;
+            border-radius: 24px;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+            border: 2.5px solid #00ff44;
+            transition: transform 0.3s ease;
+        }
+        .logo-img:hover { transform: scale(1.02); }
+        .logo-img-small {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 255, 0, 0.3);
+            border: 2px solid #00ff44;
+        }
+        
+        /* ========== ТИПОГРАФИКА ========== */
         h1 {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #00ff00, #00aa00);
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00ff88, #00cc44, #00ff88);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             text-align: center;
+            margin-bottom: 8px;
+            text-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+            letter-spacing: -0.5px;
         }
-        .subtitle { text-align: center; color: #00cc00; font-size: 14px; margin-bottom: 24px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 13px; color: #00cc00; margin-bottom: 6px; }
-        input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #00aa00;
-            border-radius: 12px;
-            background: rgba(0, 20, 0, 0.7);
-            color: #00ff00;
+        .subtitle {
+            text-align: center;
+            color: #00dd66;
             font-size: 14px;
+            margin-bottom: 28px;
+            opacity: 0.9;
+            font-weight: 400;
+            letter-spacing: 0.5px;
         }
-        input:focus { outline: none; border-color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
-        input::placeholder { color: #4a6a4a; }
-        input[readonly] { background: #0a2a0a; cursor: not-allowed; color: #00aa00; }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00ff66;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 170, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::before { content: '▌'; color: #00ff00; font-size: 22px; }
+        
+        /* ========== ФОРМЫ ========== */
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #00cc66;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #00aa00;
+            border-radius: 16px;
+            font-size: 15px;
+            background: rgba(0, 25, 0, 0.8);
+            color: #00ff88;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #00ff44;
+            box-shadow: 0 0 20px rgba(0, 255, 68, 0.4), 0 0 0 3px rgba(0, 255, 68, 0.1);
+            background: rgba(0, 35, 0, 0.9);
+            transform: scale(1.01);
+        }
+        input::placeholder, textarea::placeholder { color: #3a7a3a; }
+        input[readonly] {
+            background: #0a2a0a;
+            cursor: not-allowed;
+            color: #00aa66;
+            border-color: #006600;
+        }
+        
+        /* ========== КНОПКИ ========== */
         .btn {
             width: 100%;
-            padding: 12px 20px;
+            padding: 15px 24px;
             border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn:hover::before { left: 100%; }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: linear-gradient(135deg, #008800, #00cc33, #00ff55);
+            color: #001a00;
+            box-shadow: 0 8px 25px rgba(0, 255, 0, 0.3);
+            text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #00ff66;
+            border: 2px solid #00aa00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #991111, #cc3333, #ff4444);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #cc7700, #ffaa00, #ffcc44);
+            color: #1a1a00;
+            box-shadow: 0 8px 25px rgba(255, 170, 0, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #006600, #00aa33, #00cc55);
+            color: white;
+        }
+        .copy-btn {
+            background: #008800;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
             transition: all 0.2s;
         }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #00aa00, #00ff00); color: #001a00; }
-        .btn-secondary { background: transparent; color: #00ff00; border: 1px solid #00aa00; }
-        .btn-danger { background: #aa3333; color: white; }
-        .btn-warning { background: #ff9800; color: #001a00; }
+        .copy-btn:hover { background: #00aa00; transform: scale(1.02); }
+        
+        /* ========== GLOBAL ID БЛОК ========== */
         .global-id-box {
-            background: rgba(0, 30, 0, 0.5);
-            border-radius: 16px;
-            padding: 20px;
+            background: linear-gradient(135deg, rgba(0, 50, 0, 0.7), rgba(0, 30, 0, 0.9));
+            border-radius: 20px;
+            padding: 24px;
             text-align: center;
-            margin: 20px 0;
-            border: 2px solid #00ff00;
+            margin: 24px 0;
+            border: 2.5px solid #00ff44;
+            box-shadow: 0 0 40px rgba(0, 255, 68, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05);
+            position: relative;
+            overflow: hidden;
         }
+        .global-id-box::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(0,255,0,0.05) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .global-id-value {
-            font-size: 20px;
-            font-family: monospace;
+            font-size: 22px;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-weight: 700;
             background: #001a00;
-            padding: 12px;
-            border-radius: 12px;
-            color: #00ff00;
+            padding: 16px;
+            border-radius: 14px;
+            color: #00ff66;
             word-break: break-all;
+            letter-spacing: 2.5px;
+            margin: 12px 0;
+            border: 1.5px solid #00aa33;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 1;
         }
+        
+        /* ========== QR КОНТЕЙНЕР ========== */
         .qr-container {
             display: flex;
             justify-content: center;
-            margin: 20px 0;
-            padding: 20px;
+            margin: 24px 0;
+            padding: 24px;
             background: white;
-            border-radius: 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 2px #00aa00;
         }
-        .message {
-            font-size: 12px;
+        
+        /* ========== 2FA КОД ========== */
+        .two-factor-code {
+            background: linear-gradient(135deg, #000c00, #001a00);
+            border: 3.5px solid #00ff44;
+            border-radius: 24px;
+            padding: 35px 25px;
             text-align: center;
-            margin-top: 12px;
-            padding: 8px;
-            border-radius: 8px;
-            display: none;
+            margin: 24px 0;
+            animation: codePulse 2s ease-in-out infinite;
+            box-shadow: 0 0 50px rgba(0, 255, 68, 0.4);
         }
-        .message-success { background: rgba(0, 80, 0, 0.5); color: #00ff00; display: block; }
-        .message-error { background: rgba(80, 0, 0, 0.5); color: #ff6666; display: block; }
+        @keyframes codePulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 68, 0.3); border-color: #00ff44; }
+            50% { box-shadow: 0 0 60px rgba(0, 255, 68, 0.6); border-color: #88ff88; }
+        }
+        .code-display {
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: 24px;
+            color: #00ff66;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 30px #00ff44;
+            margin: 15px 0;
+        }
+        .timer {
+            color: #ffbb33;
+            margin-top: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* ========== ПРЕДУПРЕЖДЕНИЯ ========== */
+        .warning-box {
+            background: rgba(255, 170, 0, 0.12);
+            border: 1.5px solid #ffaa00;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #ffcc66;
+            font-size: 13px;
+            line-height: 1.5;
+            backdrop-filter: blur(5px);
+        }
+        .danger-box {
+            background: rgba(204, 51, 51, 0.12);
+            border: 1.5px solid #cc3333;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #ff8888;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .success-box {
+            background: rgba(0, 170, 0, 0.12);
+            border: 1.5px solid #00aa00;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #88ff88;
+        }
+        
+        /* ========== СООБЩЕНИЯ ========== */
+        .message {
+            font-size: 14px;
+            text-align: center;
+            margin-top: 16px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            display: none;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-success { background: rgba(0, 100, 0, 0.7); color: #aaffaa; border: 1px solid #00ff44; display: block; }
+        .message-error { background: rgba(120, 0, 0, 0.7); color: #ffaaaa; border: 1px solid #ff4444; display: block; }
+        
+        /* ========== АВАТАР (для профиля) ========== */
         .avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #00aa00, #00ff00);
-            border-radius: 40px;
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, #008800, #00dd44, #00ff88);
+            border-radius: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px;
-            font-size: 36px;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            font-weight: 700;
             color: #001a00;
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.4), inset 0 -3px 0 rgba(0,0,0,0.2);
+            border: 3px solid #00ff66;
         }
-        .section-title { 
-            font-size: 18px; 
-            color: #00ff00; 
-            margin-bottom: 16px; 
-            border-bottom: 1px solid #00aa00; 
-            padding-bottom: 8px;
+        
+        /* ========== СТАТУС БЛОКИРОВКИ ========== */
+        .lock-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
-        .flex-buttons { display: flex; gap: 12px; margin-top: 16px; }
+        .lock-active { background: #cc3333; color: white; box-shadow: 0 0 20px #ff4444; }
+        .lock-inactive { background: #00aa33; color: white; box-shadow: 0 0 15px #00ff44; }
+        
+        /* ========== ФЛЕКС КНОПКИ ========== */
+        .flex-buttons { display: flex; gap: 14px; margin-top: 20px; }
         .flex-buttons button { flex: 1; }
-        .info-text { color: #00aa00; font-size: 12px; text-align: center; margin-top: 16px; }
-        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-        .divider-line { flex: 1; height: 1px; background: #00aa00; }
-        .divider-text { font-size: 11px; color: #00aa00; }
-        .two-factor-code {
-            background: #000800;
-            border: 3px solid #00ff00;
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
+        
+        /* ========== РАЗДЕЛИТЕЛЬ ========== */
+        .divider { display: flex; align-items: center; gap: 14px; margin: 24px 0; }
+        .divider-line { flex: 1; height: 2px; background: linear-gradient(90deg, transparent, #00aa00, transparent); }
+        .divider-text { font-size: 12px; color: #00aa66; font-weight: 600; text-transform: uppercase; }
+        
+        /* ========== ЧЕКБОКС ========== */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00dd77;
+            font-size: 14px;
             margin: 20px 0;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.6); }
-            100% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
-        }
-        .code-display {
-            font-size: 64px;
-            font-weight: bold;
-            letter-spacing: 20px;
-            color: #00ff00;
-            font-family: monospace;
-        }
-        .timer { color: #ffaa00; margin-top: 10px; font-size: 14px; }
-        .warning-box {
-            background: rgba(255, 152, 0, 0.1);
-            border: 1px solid #ff9800;
+            cursor: pointer;
+            padding: 10px;
             border-radius: 12px;
-            padding: 12px;
-            margin: 16px 0;
-            color: #ff9800;
-            font-size: 12px;
+            transition: background 0.2s;
         }
-        .danger-box {
-            background: rgba(170, 51, 51, 0.15);
-            border: 1px solid #aa3333;
-            border-radius: 12px;
-            padding: 12px;
-            margin: 16px 0;
-            color: #ff6666;
-            font-size: 12px;
-        }
-        .lock-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .lock-active { background: #aa3333; color: white; }
-        .lock-inactive { background: #00aa00; color: white; }
-        .checkbox-label { display: flex; align-items: center; gap: 8px; color: #00cc00; font-size: 13px; margin: 16px 0; cursor: pointer; }
-        .code-input-container { display: flex; gap: 8px; justify-content: center; margin: 20px 0; }
+        .checkbox-label:hover { background: rgba(0, 100, 0, 0.3); }
+        .checkbox-label input { width: 20px; height: 20px; accent-color: #00ff44; cursor: pointer; }
+        
+        /* ========== КОД ВВОД ========== */
+        .code-input-container { display: flex; gap: 12px; justify-content: center; margin: 24px 0; }
         .code-input {
-            width: 50px;
-            height: 60px;
+            width: 60px;
+            height: 70px;
             text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            border: 2px solid #00aa00;
-            border-radius: 12px;
+            font-size: 34px;
+            font-weight: 700;
+            border: 3px solid #00aa00;
+            border-radius: 16px;
             background: #001a00;
-            color: #00ff00;
+            color: #00ff66;
+            font-family: 'Courier New', monospace;
         }
+        .code-input:focus { border-color: #00ff44; box-shadow: 0 0 25px #00ff44; }
+        
+        /* ========== ИНФО ТЕКСТ ========== */
+        .info-text { color: #00aa66; font-size: 13px; text-align: center; margin-top: 18px; opacity: 0.9; }
+        
+        /* ========== УСТРОЙСТВА ========== */
+        .device-item {
+            background: rgba(0, 40, 0, 0.5);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #00aa00;
+        }
+        .device-info-small { flex: 1; }
+        .device-name { color: #00ff66; font-weight: 600; margin-bottom: 4px; }
+        .device-meta { color: #00aa66; font-size: 11px; }
+        .device-current { background: #00aa00; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; }
+        
+        /* ========== АДАПТИВ ========== */
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .card { padding: 22px 18px; }
+            .global-id-value { font-size: 18px; padding: 12px; }
+            .code-display { font-size: 56px; letter-spacing: 16px; }
+            .code-input { width: 50px; height: 60px; font-size: 28px; }
+            h1 { font-size: 26px; }
+            .logo-img { width: 80px; height: 80px; }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card { animation: fadeInUp 0.5s ease; }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- ========== ФОРМА АВТОРИЗАЦИИ ========== -->
         <div id="authForm" class="card">
-            <div class="avatar">🌐</div>
+            <!-- ЛОГОТИП -->
+            <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img">
             <h1>IT Global</h1>
-            <div class="subtitle">Управление Global ID</div>
+            <div class="subtitle">Управление единым идентификатором</div>
+            
+            <!-- Вход -->
             <div id="loginMode">
-                <div class="form-group"><label class="form-label">Email или Global ID</label><input type="text" id="loginIdentifier" placeholder="your@email.com или Global ID"></div>
-                <div class="form-group"><label class="form-label">Пароль</label><input type="password" id="loginPassword" placeholder="Введите пароль"></div>
-                <button class="btn btn-primary" onclick="login()">Войти</button>
-                <div class="divider"><div class="divider-line"></div><div class="divider-text">или</div><div class="divider-line"></div></div>
-                <button class="btn btn-secondary" onclick="showRegister()">Создать Global ID</button>
+                <div class="form-group">
+                    <label class="form-label">📧 Email или Global ID</label>
+                    <input type="text" id="loginIdentifier" placeholder="your@email.com или Global ID" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔒 Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                <button class="btn btn-primary" onclick="login()">🚪 Войти в систему</button>
+                <div class="divider">
+                    <div class="divider-line"></div>
+                    <div class="divider-text">или</div>
+                    <div class="divider-line"></div>
+                </div>
+                <button class="btn btn-secondary" onclick="showRegister()">✨ Создать новый Global ID</button>
             </div>
+            
+            <!-- Регистрация -->
             <div id="registerMode" style="display:none;">
-                <div class="form-group"><label class="form-label">Email</label><input type="email" id="regEmail" placeholder="your@email.com"></div>
-                <div class="form-group"><label class="form-label">Пароль</label><input type="password" id="regPassword" placeholder="Минимум 6 символов"></div>
-                <div class="form-group"><label class="form-label">Подтвердите</label><input type="password" id="regConfirm" placeholder="Повторите пароль"></div>
-                <button class="btn btn-primary" onclick="register()">Создать Global ID</button>
-                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top:10px;">← Назад</button>
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
+                <h1>Регистрация</h1>
+                <div class="subtitle">Создание нового Global ID</div>
+                <div class="form-group">
+                    <label class="form-label">📧 Email</label>
+                    <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔒 Пароль (мин. 6 символов)</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔒 Подтверждение пароля</label>
+                    <input type="password" id="regConfirm" placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <button class="btn btn-primary" onclick="register()">✅ Зарегистрироваться</button>
+                <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 12px;">← Назад ко входу</button>
             </div>
+            
+            <!-- 2FA при входе -->
             <div id="twoFactorLoginMode" style="display:none;">
-                <div style="text-align:center;margin-bottom:20px;"><div style="font-size:40px;">🔐</div><h3 style="color:#00ff00;">Подтверждение входа</h3><p style="color:#00cc00;font-size:13px;">Введите код из Global ID</p></div>
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:48px; margin-bottom:10px;">🔐</div>
+                    <h3 style="color:#00ff66; margin-bottom:8px;">Подтверждение входа</h3>
+                    <p style="color:#00cc66; font-size:14px;">Введите код из приложения</p>
+                </div>
                 <div class="code-input-container">
                     <input type="text" class="code-input" maxlength="1" id="code1" oninput="moveToNext(this,0)">
                     <input type="text" class="code-input" maxlength="1" id="code2" oninput="moveToNext(this,1)">
                     <input type="text" class="code-input" maxlength="1" id="code3" oninput="moveToNext(this,2)">
                     <input type="text" class="code-input" maxlength="1" id="code4" oninput="moveToNext(this,3)">
                 </div>
-                <div class="warning-box"><strong>⚠️ Код отображается на устройствах где выполнен вход</strong></div>
-                <label class="checkbox-label"><input type="checkbox" id="trustDevice"><span>✅ Запомнить это устройство</span></label>
-                <button class="btn btn-primary" onclick="verifyLogin2FA()">Подтвердить</button>
-                <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">Отмена</button>
+                <div class="warning-box">
+                    <strong>⚠️ ВНИМАНИЕ!</strong><br>
+                    Код отображается на устройствах, где выполнен вход в Global ID.<br>
+                    Никогда не сообщайте этот код никому!
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="trustDevice">
+                    <span>✅ Запомнить это устройство (30 дней)</span>
+                </label>
+                <button class="btn btn-primary" onclick="verifyLogin2FA()">✅ Подтвердить вход</button>
+                <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">❌ Отмена</button>
                 <div id="twoFactorMessage" class="message"></div>
             </div>
+            
+            <!-- Экран разблокировки -->
             <div id="unlockMode" style="display:none;">
-                <div style="text-align:center;margin-bottom:20px;"><div style="font-size:40px;">🔒</div><h3 style="color:#ff6666;">Доступ заблокирован</h3></div>
-                <div class="form-group"><label class="form-label">Пароль</label><input type="password" id="unlockPassword" placeholder="Введите пароль"></div>
-                <div class="danger-box"><strong>🚨 Экстренная блокировка активна</strong></div>
-                <button class="btn btn-warning" onclick="unlockAccount()">Разблокировать</button>
-                <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top:10px;">Отмена</button>
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small" style="border-color: #ff4444;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:48px; margin-bottom:10px;">🔒</div>
+                    <h3 style="color:#ff6666; margin-bottom:8px;">Аккаунт заблокирован</h3>
+                    <p style="color:#ffaa00; font-size:14px;">Введите пароль для разблокировки</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔒 Пароль</label>
+                    <input type="password" id="unlockPassword" placeholder="Введите ваш пароль">
+                </div>
+                <div class="danger-box">
+                    <strong>🚨 ЭКСТРЕННАЯ БЛОКИРОВКА АКТИВНА</strong><br>
+                    Все сессии завершены. Требуется пароль для восстановления доступа.
+                </div>
+                <button class="btn btn-warning" onclick="unlockAccount()">🔓 Разблокировать аккаунт</button>
+                <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top:10px;">← Назад</button>
                 <div id="unlockMessage" class="message"></div>
             </div>
+            
             <div id="authMessage" class="message"></div>
         </div>
 
+        <!-- ========== ПАНЕЛЬ ПРОФИЛЯ ========== -->
         <div id="profilePanel" style="display:none;">
+            <!-- Экстренная блокировка -->
             <div class="card">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <div><h2 class="section-title" style="border-bottom:none;margin-bottom:0;">🛡️ Безопасность</h2><div id="lockStatusDisplay"><span class="lock-status lock-inactive">● Аккаунт активен</span></div></div>
-                    <button class="btn-danger" onclick="emergencyLock()" style="width:auto;padding:12px 20px;">🚨 ЭКСТРЕННАЯ БЛОКИРОВКА</button>
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <h2 class="section-title" style="border-bottom:none; margin-bottom:0;">🛡️ Безопасность</h2>
+                        <div id="lockStatusDisplay">
+                            <span class="lock-status lock-inactive">● Аккаунт активен</span>
+                        </div>
+                    </div>
+                    <button class="btn-danger" onclick="emergencyLock()" style="width:auto; padding:12px 20px;">
+                        🚨 ЭКСТРЕННАЯ БЛОКИРОВКА
+                    </button>
+                </div>
+                <div class="info-text" style="color:#ff6666; margin-top:10px;">
+                    Нажмите для мгновенной блокировки всех входов
                 </div>
             </div>
+
+            <!-- 2FA Коды -->
             <div class="card">
-                <div class="avatar">🔐</div><h1>Коды для входа</h1><div class="subtitle">Появляются при входе с нового устройства</div>
+                <div class="avatar">🔐</div>
+                <h1>Коды для входа</h1>
+                <div class="subtitle">Появляются при входе с нового устройства</div>
                 <div id="twoFactorSection">
-                    <div class="two-factor-code" id="codeBlock" style="display:none;"><div style="font-size:12px;color:#00aa00;">КОД ДЛЯ ВХОДА</div><div class="code-display" id="currentCode">----</div><div class="timer" id="codeTimer">5:00</div></div>
-                    <div id="noCodeMessage" style="text-align:center;padding:30px;color:#00aa00;"><div style="font-size:40px;">🛡️</div><p>Коды появляются при попытке входа</p></div>
-                    <div class="warning-box"><strong>⚠️ ВНИМАНИЕ!</strong><br>Никогда не сообщайте этот код никому!</div>
+                    <div class="two-factor-code" id="codeBlock" style="display:none;">
+                        <div style="font-size:12px; color:#00aa00;">ТЕКУЩИЙ КОД</div>
+                        <div class="code-display" id="currentCode">----</div>
+                        <div class="timer" id="codeTimer">5:00</div>
+                    </div>
+                    <div id="noCodeMessage" style="text-align:center; padding:30px; color:#00aa00;">
+                        <div style="font-size:48px;">🛡️</div>
+                        <p>Коды появляются при попытке входа<br>с нового устройства</p>
+                    </div>
+                    <div class="warning-box">
+                        <strong>⚠️ ВНИМАНИЕ!</strong><br>
+                        Никогда не сообщайте этот код никому!<br>
+                        Сотрудники IT Global никогда не запрашивают коды.
+                    </div>
                 </div>
             </div>
+
+            <!-- Основная информация -->
             <div class="card">
-                <div class="avatar" id="userAvatar">👤</div><h1 id="userName"></h1><div class="subtitle" id="userEmail"></div>
-                <div class="global-id-box"><div style="font-size:12px;color:#00aa00;">🔑 Ваш Global ID</div><div class="global-id-value" id="globalIdValue"></div><button class="copy-btn" onclick="copyGlobalId()" style="margin-top:10px;background:#008800;color:white;border:none;padding:8px 16px;border-radius:8px;">📋 Копировать</button></div>
+                <div class="avatar" id="userAvatar">👤</div>
+                <h1 id="userName">Пользователь</h1>
+                <div class="subtitle" id="userEmail">email@example.com</div>
+                
+                <div class="global-id-box">
+                    <div style="font-size:12px; color:#00aa00; margin-bottom:8px;">🔑 Ваш Global ID</div>
+                    <div class="global-id-value" id="globalIdValue">—</div>
+                    <button class="copy-btn" onclick="copyGlobalId()">📋 Копировать Global ID</button>
+                </div>
+
                 <div class="qr-container" id="qrContainer"></div>
-                <div class="info-text">Отсканируйте для входа в сервисы</div>
+                <div class="info-text">Отсканируйте QR-код, чтобы поделиться Global ID</div>
             </div>
+
+            <!-- Известные устройства -->
+            <div class="card">
+                <h2 class="section-title">📱 Известные устройства</h2>
+                <div id="devicesList">
+                    <div class="info-text">Загрузка списка устройств...</div>
+                </div>
+                <button class="btn btn-secondary" onclick="forgetAllDevices()" style="margin-top:16px;">
+                    🗑 Забыть все устройства
+                </button>
+                <div class="info-text" style="color:#ffaa00;">
+                    После сброса потребуется 2FA при следующем входе
+                </div>
+            </div>
+
+            <!-- Личные данные -->
             <div class="card">
                 <h2 class="section-title">👤 Личные данные</h2>
-                <div class="form-group"><label class="form-label">Основная почта</label><input type="email" id="mainEmail" readonly></div>
-                <div class="form-group"><label class="form-label">ФИО</label><input type="text" id="fullName" placeholder="Иванов Иван Иванович"></div>
-                <div class="form-group"><label class="form-label">Дата рождения</label><input type="date" id="birthDate"></div>
-                <div class="form-group"><label class="form-label">Номер телефона</label><input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67"></div>
-                <div class="form-group"><label class="form-label">СНИЛС</label><input type="text" id="snils" placeholder="123-456-789 01"></div>
-                <div class="form-group"><label class="form-label">Telegram</label><input type="text" id="telegram" placeholder="@username"></div>
-                <div class="form-group"><label class="form-label">Доп. email</label><input type="email" id="additionalEmail" placeholder="additional@email.com"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Основная почта</label>
+                    <input type="email" id="mainEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ФИО</label>
+                    <input type="text" id="fullName" placeholder="Иванов Иван Иванович">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дата рождения</label>
+                    <input type="date" id="birthDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Номер телефона</label>
+                    <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">СНИЛС</label>
+                    <input type="text" id="snils" placeholder="123-456-789 01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telegram</label>
+                    <input type="text" id="telegram" placeholder="@username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дополнительный email</label>
+                    <input type="email" id="additionalEmail" placeholder="additional@email.com">
+                </div>
             </div>
+
+            <!-- Банковские данные -->
             <div class="card">
                 <h2 class="section-title">💳 Банковские данные</h2>
-                <div class="form-group"><label class="form-label">Номер карты</label><input type="text" id="cardNumber" placeholder="2200 7012 2658 1897"></div>
-                <div class="form-group"><label class="form-label">Название банка</label><input type="text" id="bankName" placeholder="ПАО Т-Банк"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Номер карты</label>
+                    <input type="text" id="cardNumber" placeholder="2200 7012 2658 1897">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название банка</label>
+                    <input type="text" id="bankName" placeholder="ПАО Т-Банк">
+                </div>
             </div>
+
+            <!-- Адрес проживания -->
             <div class="card">
-                <h2 class="section-title">📍 Адрес</h2>
-                <div class="form-group"><label class="form-label">Страна</label><input type="text" id="country" placeholder="Россия"></div>
-                <div class="form-group"><label class="form-label">Город</label><input type="text" id="city" placeholder="Нижнекамск"></div>
-                <div class="form-group"><label class="form-label">Адрес</label><input type="text" id="address" placeholder="ул. Ленина, д. 1, кв. 1"></div>
-                <div class="form-group"><label class="form-label">Индекс</label><input type="text" id="postalCode" placeholder="123456"></div>
+                <h2 class="section-title">📍 Адрес проживания</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Страна</label>
+                    <input type="text" id="country" placeholder="Россия">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Город</label>
+                    <input type="text" id="city" placeholder="Нижнекамск">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Адрес</label>
+                    <input type="text" id="address" placeholder="ул. Ленина, д. 1, кв. 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Почтовый индекс</label>
+                    <input type="text" id="postalCode" placeholder="123456">
+                </div>
             </div>
+
+            <!-- Кнопки -->
             <div class="card">
-                <div class="flex-buttons"><button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить</button><button class="btn btn-danger" onclick="logout()">🚪 Выйти</button></div>
+                <div class="flex-buttons">
+                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить все данные</button>
+                    <button class="btn btn-danger" onclick="logout()">🚪 Выйти</button>
+                </div>
                 <div id="profileMessage" class="message"></div>
+            </div>
+
+            <!-- Информация -->
+            <div class="card">
+                <h2 class="section-title">ℹ️ Что такое Global ID?</h2>
+                <p style="color:#00cc66; font-size:13px; line-height:1.6;">
+                    Global ID — это уникальный идентификатор пользователя в экосистеме IT Global.
+                    Он используется во всех сервисах: GloBank, Айсберг, и будущих продуктах.
+                    Один ID — доступ ко всем сервисам.
+                </p>
+                <div class="success-box" style="margin-top:16px;">
+                    <strong>🔒 Ваши данные защищены</strong><br>
+                    Все данные хранятся в зашифрованном виде. Только вы имеете к ним доступ.
+                </div>
             </div>
         </div>
     </div>
-    <script type="module">
-        const firebaseConfig = { apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw", authDomain: "glob-data.firebaseapp.com", projectId: "glob-data", storageBucket: "glob-data.firebasestorage.app", messagingSenderId: "122757049174", appId: "1:122757049174:web:ebb425edd0e1a8ea9a44f7" };
+        <script type="module">
+        // ==================== КОНФИГУРАЦИЯ FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw",
+            authDomain: "glob-data.firebaseapp.com",
+            projectId: "glob-data",
+            storageBucket: "glob-data.firebasestorage.app",
+            messagingSenderId: "122757049174",
+            appId: "1:122757049174:web:ebb425edd0e1a8ea9a44f7"
+        };
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const app = initializeApp(firebaseConfig), auth = getAuth(), db = getFirestore();
-        let currentUser = null, currentUserData = null, pendingUser = null, pendingEmail = null, codeInterval = null, deviceFingerprint = null;
-        function generateGlobalId(){ return Array.from({length:22},()=>'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*62)]).join(''); }
-        async function getDeviceInfo(){ const nav = navigator; deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}`); }
-        function generateQR(g){ document.getElementById('qrContainer').innerHTML=''; new QRCode(document.getElementById('qrContainer'),{text:`Global ID: ${g}`,width:200,height:200,colorDark:"#00aa00",colorLight:"#ffffff"}); }
-        function showMessage(el,text,err=true){ const e=document.getElementById(el); if(!e)return; e.textContent=text; e.className=`message ${err?'message-error':'message-success'}`; setTimeout(()=>e.style.display='none',4000); }
-        function display2FACode(code,expires){ const b=document.getElementById('codeBlock'),n=document.getElementById('noCodeMessage'); b.style.display='block'; n.style.display='none'; document.getElementById('currentCode').textContent=code; if(codeInterval)clearInterval(codeInterval); codeInterval=setInterval(()=>{ const d=expires.toDate()-new Date(); if(d<=0){ clearInterval(codeInterval); document.getElementById('currentCode').textContent='ИСТЁК'; setTimeout(()=>{b.style.display='none';n.style.display='block';},5000); }else{ const m=Math.floor(d/60000),s=Math.floor((d%60000)/1000); document.getElementById('codeTimer').textContent=`${m}:${s.toString().padStart(2,'0')}`; } },1000); }
-        function watchFor2FACodes(uid){ onSnapshot(doc(db,"users",uid),(d)=>{ const data=d.data(); if(data){ document.getElementById('lockStatusDisplay').innerHTML=data.accountLocked?'<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>':'<span class="lock-status lock-inactive">● Аккаунт активен</span>'; } if(data?.twoFactorCode && data.twoFactorCodeExpires?.toDate() > new Date()){ display2FACode(data.twoFactorCode, data.twoFactorCodeExpires); } }); }
-        window.moveToNext=(inp,idx)=>{ if(inp.value.length===1) document.getElementById(`code${idx+2}`)?.focus(); };
-        window.cancelLogin2FA=()=>{ document.getElementById('loginMode').style.display='block'; document.getElementById('twoFactorLoginMode').style.display='none'; pendingUser=null; };
-        window.cancelUnlock=()=>{ document.getElementById('loginMode').style.display='block'; document.getElementById('unlockMode').style.display='none'; };
-        window.verifyLogin2FA=async()=>{
-            const code=['code1','code2','code3','code4'].map(id=>document.getElementById(id).value).join('');
-            if(code.length!==4){showMessage('twoFactorMessage','Введите 4 цифры',true);return;}
-            if(!pendingUser)return;
-            const snap=await getDoc(doc(db,"users",pendingUser.uid));
-            if(code===snap.data()?.twoFactorCode){
-                if(document.getElementById('trustDevice').checked) localStorage.setItem(`trusted_${pendingUser.uid}`,deviceFingerprint);
-                await updateDoc(doc(db,"users",pendingUser.uid),{twoFactorCode:null,twoFactorCodeExpires:null});
-                document.getElementById('loginMode').style.display='none'; document.getElementById('twoFactorLoginMode').style.display='none';
-                document.getElementById('authForm').style.display='none'; document.getElementById('profilePanel').style.display='block';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore();
+        auth.setPersistence({ type: 'NONE' });
+
+        // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+        let currentUser = null;
+        let currentUserData = null;
+        let pendingUser = null;
+        let pendingEmail = null;
+        let codeInterval = null;
+        let deviceFingerprint = null;
+        let currentIP = null;
+
+        // ==================== ГЕНЕРАЦИЯ GLOBAL ID ====================
+        function generateGlobalId() {
+            const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }
+
+        // ==================== ПОЛУЧЕНИЕ ИНФОРМАЦИИ ОБ УСТРОЙСТВЕ ====================
+        async function getDeviceInfo() {
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                currentIP = ipData.ip;
+            } catch(e) {
+                currentIP = 'unknown';
+            }
+            const nav = window.navigator;
+            deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
+            return { ip: currentIP, fingerprint: deviceFingerprint };
+        }
+
+        // ==================== ГЕНЕРАЦИЯ 2FA КОДА ====================
+        function generate2FACode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        // ==================== ПРОВЕРКА УСТРОЙСТВА ====================
+        async function isDeviceKnown(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            const knownDevices = data?.knownDevices || [];
+            return knownDevices.some(d => d.fingerprint === deviceFingerprint || d.ip === currentIP);
+        }
+
+        // ==================== ПРОВЕРКА БЛОКИРОВКИ ====================
+        async function isAccountLocked(uid) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const data = userDoc.data();
+            return data?.accountLocked === true;
+        }
+
+        // ==================== ДОБАВЛЕНИЕ УСТРОЙСТВА ====================
+        async function addKnownDevice(uid) {
+            const deviceInfo = {
+                fingerprint: deviceFingerprint,
+                ip: currentIP,
+                userAgent: navigator.userAgent,
+                addedAt: new Date(),
+                lastUsed: new Date()
+            };
+            await updateDoc(doc(db, "users", uid), {
+                knownDevices: arrayUnion(deviceInfo)
+            });
+        }
+
+        // ==================== ОТОБРАЖЕНИЕ СООБЩЕНИЙ ====================
+        function showMessage(elementId, text, isError = true) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = text;
+            el.className = `message ${isError ? 'message-error' : 'message-success'}`;
+            el.style.display = 'block';
+            setTimeout(() => { if(el) el.style.display = 'none'; }, 5000);
+        }
+
+        // ==================== ГЕНЕРАЦИЯ QR-КОДА ====================
+        function generateQR(globalId) {
+            const qrContainer = document.getElementById('qrContainer');
+            if (!qrContainer) return;
+            qrContainer.innerHTML = '';
+            try {
+                new QRCode(qrContainer, {
+                    text: `Global ID: ${globalId}`,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#00aa00",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch(e) {
+                qrContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#00aa00;">🔲 QR-код</div>';
+            }
+        }
+
+        // ==================== ОТОБРАЖЕНИЕ 2FA КОДА ====================
+        function display2FACode(code, expires) {
+            const codeBlock = document.getElementById('codeBlock');
+            const noCodeMessage = document.getElementById('noCodeMessage');
+            const currentCode = document.getElementById('currentCode');
+            const codeTimer = document.getElementById('codeTimer');
+            
+            if (!codeBlock || !noCodeMessage) return;
+            
+            codeBlock.style.display = 'block';
+            noCodeMessage.style.display = 'none';
+            currentCode.textContent = code;
+            
+            if (codeInterval) clearInterval(codeInterval);
+            
+            codeInterval = setInterval(() => {
+                const diff = expires.toDate() - new Date();
+                if (diff <= 0) {
+                    clearInterval(codeInterval);
+                    currentCode.textContent = 'ИСТЁК';
+                    codeTimer.textContent = 'Код истёк';
+                    setTimeout(() => {
+                        codeBlock.style.display = 'none';
+                        noCodeMessage.style.display = 'block';
+                    }, 5000);
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    codeTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        // ==================== ОТСЛЕЖИВАНИЕ 2FA КОДОВ ====================
+        function watchFor2FACodes(uid) {
+            onSnapshot(doc(db, "users", uid), (docSnap) => {
+                const data = docSnap.data();
+                
+                // Обновление статуса блокировки
+                const statusDiv = document.getElementById('lockStatusDisplay');
+                if (statusDiv && data) {
+                    if (data.accountLocked) {
+                        statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
+                    } else {
+                        statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
+                    }
+                }
+                
+                // Отображение кода
+                if (data?.twoFactorCode && data.twoFactorCodeExpires) {
+                    const expires = data.twoFactorCodeExpires.toDate();
+                    if (expires > new Date()) {
+                        display2FACode(data.twoFactorCode, data.twoFactorCodeExpires);
+                    }
+                }
+                
+                // Обновление списка устройств
+                if (data?.knownDevices) {
+                    renderDevicesList(data.knownDevices);
+                }
+            });
+        }
+
+        // ==================== ОТОБРАЖЕНИЕ СПИСКА УСТРОЙСТВ ====================
+        function renderDevicesList(devices) {
+            const container = document.getElementById('devicesList');
+            if (!container) return;
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<div class="info-text">Нет известных устройств</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            devices.sort((a, b) => new Date(b.lastUsed || b.addedAt) - new Date(a.lastUsed || a.addedAt));
+            
+            devices.forEach((device, index) => {
+                const isCurrent = device.fingerprint === deviceFingerprint;
+                const deviceDiv = document.createElement('div');
+                deviceDiv.className = 'device-item';
+                
+                const date = device.lastUsed || device.addedAt;
+                const dateStr = date ? new Date(date).toLocaleDateString() : 'Неизвестно';
+                
+                deviceDiv.innerHTML = `
+                    <div class="device-info-small">
+                        <div class="device-name">
+                            ${index === 0 ? '⭐ ' : '📱 '}
+                            ${device.userAgent ? device.userAgent.substring(0, 30) + '...' : 'Неизвестное устройство'}
+                        </div>
+                        <div class="device-meta">
+                            IP: ${device.ip || 'неизвестно'} | Добавлено: ${dateStr}
+                        </div>
+                    </div>
+                    ${isCurrent ? '<span class="device-current">Текущее</span>' : ''}
+                `;
+                
+                container.appendChild(deviceDiv);
+            });
+        }
+
+        // ==================== 2FA НАВИГАЦИЯ ====================
+        window.moveToNext = (input, index) => {
+            if (input.value.length === 1) {
+                const next = document.getElementById(`code${index + 2}`);
+                if (next) next.focus();
+            }
+        };
+
+        window.cancelLogin2FA = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('twoFactorLoginMode').style.display = 'none';
+            ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+            pendingUser = null;
+        };
+
+        window.cancelUnlock = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('unlockMode').style.display = 'none';
+            pendingUser = null;
+            pendingEmail = null;
+        };
+
+        // ==================== ПРОВЕРКА 2FA ====================
+        window.verifyLogin2FA = async () => {
+            const code = ['code1','code2','code3','code4'].map(id => document.getElementById(id).value).join('');
+            
+            if (code.length !== 4) {
+                showMessage('twoFactorMessage', 'Введите 4 цифры', true);
+                return;
+            }
+            
+            if (!pendingUser) {
+                showMessage('twoFactorMessage', 'Ошибка сессии', true);
+                return;
+            }
+            
+            const userDoc = await getDoc(doc(db, "users", pendingUser.uid));
+            const userData = userDoc.data();
+            
+            if (code === userData?.twoFactorCode) {
+                if (document.getElementById('trustDevice').checked) {
+                    await addKnownDevice(pendingUser.uid);
+                }
+                
+                await updateDoc(doc(db, "users", pendingUser.uid), {
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
+                    online: true,
+                    lastSeen: serverTimestamp(),
+                    currentIP: currentIP,
+                    currentDevice: deviceFingerprint
+                });
+                
+                document.getElementById('loginMode').style.display = 'none';
+                document.getElementById('twoFactorLoginMode').style.display = 'none';
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('profilePanel').style.display = 'block';
+                
+                ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+                
                 await loadProfile(pendingUser);
-            }else showMessage('twoFactorMessage','❌ Неверный код',true);
+            } else {
+                showMessage('twoFactorMessage', '❌ Неверный код', true);
+            }
         };
-        window.register=async()=>{
-            const email=document.getElementById('regEmail').value.trim(), pwd=document.getElementById('regPassword').value;
-            if(!email||!pwd||pwd!==document.getElementById('regConfirm').value){showMessage('authMessage','Проверьте данные',true);return;}
+
+        // ==================== ВХОД ====================
+        window.login = async () => {
+            const identifier = document.getElementById('loginIdentifier').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!identifier || !password) {
+                showMessage('authMessage', 'Заполните все поля', true);
+                return;
+            }
+            
             await getDeviceInfo();
-            try{
-                const cred=await createUserWithEmailAndPassword(auth,email,pwd);
-                const gid=generateGlobalId();
-                await setDoc(doc(db,"users",cred.user.uid),{email,globalId:gid,nickname:email.split('@')[0],createdAt:serverTimestamp(),icebergAccess:true,globalIdAccess:true,accountLocked:false,knownDevices:[{fingerprint:deviceFingerprint,addedAt:new Date()}]});
-                showMessage('authMessage','✅ Global ID создан!',false);
-                setTimeout(()=>{document.getElementById('loginMode').style.display='block';document.getElementById('registerMode').style.display='none';},1500);
-            }catch(e){showMessage('authMessage',e.message,true);}
-        };
-        window.login=async()=>{
-            const id=document.getElementById('loginIdentifier').value.trim(), pwd=document.getElementById('loginPassword').value;
-            if(!id||!pwd){showMessage('authMessage','Заполните поля',true);return;}
-            await getDeviceInfo();
-            try{
-                let email=id;
-                if(!id.includes('@')){ const q=query(collection(db,"users"),where("globalId","==",id)); const snap=await getDocs(q); if(snap.empty){showMessage('authMessage','Global ID не найден',true);return;} email=snap.docs[0].data().email; }
-                pendingEmail=email;
-                const cred=await signInWithEmailAndPassword(auth,email,pwd);
-                const data=(await getDoc(doc(db,"users",cred.user.uid))).data();
-                if(data?.accountLocked){await signOut(auth); document.getElementById('loginMode').style.display='none'; document.getElementById('unlockMode').style.display='block'; return;}
-                const known=(data?.knownDevices||[]).some(d=>d.fingerprint===deviceFingerprint);
-                if(known||localStorage.getItem(`trusted_${cred.user.uid}`)===deviceFingerprint){
-                    await updateDoc(doc(db,"users",cred.user.uid),{online:true,lastSeen:serverTimestamp()});
-                    document.getElementById('authForm').style.display='none'; document.getElementById('profilePanel').style.display='block';
-                    await loadProfile(cred.user);
-                }else{
-                    pendingUser=cred.user;
-                    const code=Math.floor(1000+Math.random()*9000).toString();
-                    await updateDoc(doc(db,"users",cred.user.uid),{twoFactorCode:code,twoFactorCodeExpires:new Date(Date.now()+5*60*1000)});
-                    document.getElementById('loginMode').style.display='none'; document.getElementById('twoFactorLoginMode').style.display='block';
+            
+            try {
+                let email = identifier;
+                if (!identifier.includes('@')) {
+                    const q = query(collection(db, "users"), where("globalId", "==", identifier));
+                    const snap = await getDocs(q);
+                    if (snap.empty) {
+                        showMessage('authMessage', 'Global ID не найден', true);
+                        return;
+                    }
+                    email = snap.docs[0].data().email;
+                }
+                
+                pendingEmail = email;
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCred.user;
+                
+                if (await isAccountLocked(user.uid)) {
+                    await signOut(auth);
+                    document.getElementById('loginMode').style.display = 'none';
+                    document.getElementById('unlockMode').style.display = 'block';
+                    return;
+                }
+                
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const userData = userDoc.data();
+                
+                if (!userData?.globalIdAccess) {
+                    await updateDoc(doc(db, "users", user.uid), {
+                        globalIdAccess: true,
+                        globalIdLastLogin: serverTimestamp()
+                    });
+                }
+                
+                pendingUser = user;
+                
+                const deviceKnown = await isDeviceKnown(user.uid);
+                
+                if (deviceKnown) {
+                    await updateDoc(doc(db, "users", user.uid), {
+                        online: true,
+                        lastSeen: serverTimestamp(),
+                        currentIP: currentIP
+                    });
+                    
+                    document.getElementById('authForm').style.display = 'none';
+                    document.getElementById('profilePanel').style.display = 'block';
+                    await loadProfile(user);
+                } else {
+                    const code = generate2FACode();
+                    await updateDoc(doc(db, "users", user.uid), {
+                        twoFactorCode: code,
+                        twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000)
+                    });
+                    
+                    document.getElementById('loginMode').style.display = 'none';
+                    document.getElementById('twoFactorLoginMode').style.display = 'block';
                     document.getElementById('code1').focus();
                 }
-            }catch(e){showMessage('authMessage','Неверные данные',true);}
+            } catch (error) {
+                console.error('Ошибка входа:', error);
+                showMessage('authMessage', 'Неверный email/Global ID или пароль', true);
+            }
         };
-        window.emergencyLock=async()=>{
-            if(!confirm('🚨 Заблокировать аккаунт? Все сессии будут завершены!'))return;
-            await updateDoc(doc(db,"users",currentUser.uid),{accountLocked:true,lockedAt:serverTimestamp(),twoFactorCode:null});
-            document.getElementById('codeBlock').style.display='none'; document.getElementById('noCodeMessage').style.display='block';
-            document.getElementById('lockStatusDisplay').innerHTML='<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
-            showMessage('profileMessage','🚨 Аккаунт заблокирован!',false);
+
+        // ==================== РЕГИСТРАЦИЯ ====================
+        window.register = async () => {
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirm').value;
+            
+            if (!email || !password || !confirm) {
+                showMessage('authMessage', 'Заполните все поля', true);
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('authMessage', 'Пароль должен быть минимум 6 символов', true);
+                return;
+            }
+            
+            if (password !== confirm) {
+                showMessage('authMessage', 'Пароли не совпадают', true);
+                return;
+            }
+            
+            await getDeviceInfo();
+            
+            try {
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                const globalId = generateGlobalId();
+                
+                await setDoc(doc(db, "users", userCred.user.uid), {
+                    email: email,
+                    globalId: globalId,
+                    nickname: email.split('@')[0],
+                    createdAt: serverTimestamp(),
+                    contacts: [],
+                    groups: [],
+                    online: true,
+                    lastSeen: serverTimestamp(),
+                    globalIdAccess: true,
+                    icebergAccess: false,
+                    accountLocked: false,
+                    knownDevices: [{
+                        fingerprint: deviceFingerprint,
+                        ip: currentIP,
+                        userAgent: navigator.userAgent,
+                        addedAt: new Date(),
+                        lastUsed: new Date()
+                    }],
+                    currentIP: currentIP
+                });
+                
+                showMessage('authMessage', '✅ Global ID успешно создан!', false);
+                setTimeout(() => showLogin(), 1500);
+            } catch (error) {
+                console.error('Ошибка регистрации:', error);
+                showMessage('authMessage', error.message, true);
+            }
         };
-        window.unlockAccount=async()=>{
-            const pwd=document.getElementById('unlockPassword').value;
-            if(!pwd||!pendingEmail){showMessage('unlockMessage','Введите пароль',true);return;}
-            try{
-                const cred=await signInWithEmailAndPassword(auth,pendingEmail,pwd);
-                await updateDoc(doc(db,"users",cred.user.uid),{accountLocked:false,lockedAt:null,twoFactorCode:null});
-                document.getElementById('unlockMode').style.display='none'; document.getElementById('authForm').style.display='none';
-                document.getElementById('profilePanel').style.display='block'; await loadProfile(cred.user);
-                showMessage('profileMessage','✅ Аккаунт разблокирован!',false);
-            }catch(e){showMessage('unlockMessage','❌ Неверный пароль',true);}
+
+        // ==================== ЭКСТРЕННАЯ БЛОКИРОВКА ====================
+        window.emergencyLock = async () => {
+            if (!confirm('🚨 ЭКСТРЕННАЯ БЛОКИРОВКА\n\nВсе сессии будут завершены!\nДля разблокировки потребуется пароль.\n\nПродолжить?')) {
+                return;
+            }
+            
+            if (!currentUser) return;
+            
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    accountLocked: true,
+                    lockedAt: serverTimestamp(),
+                    lockedBy: deviceFingerprint,
+                    online: false,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null
+                });
+                
+                document.getElementById('codeBlock').style.display = 'none';
+                document.getElementById('noCodeMessage').style.display = 'block';
+                document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
+                
+                showMessage('profileMessage', '🚨 Аккаунт экстренно заблокирован! Все сессии завершены.', false);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка блокировки: ' + error.message, true);
+            }
         };
-        window.logout=async()=>{ if(codeInterval)clearInterval(codeInterval); await signOut(auth); };
-        window.showRegister=()=>{ document.getElementById('loginMode').style.display='none'; document.getElementById('registerMode').style.display='block'; };
-        window.showLogin=()=>{ document.getElementById('loginMode').style.display='block'; document.getElementById('registerMode').style.display='none'; };
-        window.copyGlobalId=()=>{ navigator.clipboard.writeText(document.getElementById('globalIdValue').innerText); showMessage('profileMessage','✅ Скопировано!',false); };
-        window.saveProfile=async()=>{
-            const data={ fullName:document.getElementById('fullName').value, birthDate:document.getElementById('birthDate').value, phoneNumber:document.getElementById('phoneNumber').value, snils:document.getElementById('snils').value, telegram:document.getElementById('telegram').value, additionalEmail:document.getElementById('additionalEmail').value, cardNumber:document.getElementById('cardNumber').value, bankName:document.getElementById('bankName').value, country:document.getElementById('country').value, city:document.getElementById('city').value, address:document.getElementById('address').value, postalCode:document.getElementById('postalCode').value };
-            await updateDoc(doc(db,"users",currentUser.uid),data); showMessage('profileMessage','✅ Данные сохранены!',false);
+
+        // ==================== РАЗБЛОКИРОВКА ====================
+        window.unlockAccount = async () => {
+            const password = document.getElementById('unlockPassword').value;
+            
+            if (!password) {
+                showMessage('unlockMessage', 'Введите пароль', true);
+                return;
+            }
+            
+            if (!pendingEmail) {
+                showMessage('unlockMessage', 'Ошибка: email не найден', true);
+                return;
+            }
+            
+            try {
+                const userCred = await signInWithEmailAndPassword(auth, pendingEmail, password);
+                
+                await updateDoc(doc(db, "users", userCred.user.uid), {
+                    accountLocked: false,
+                    lockedAt: null,
+                    lockedBy: null,
+                    twoFactorCode: null,
+                    twoFactorCodeExpires: null,
+                    online: true,
+                    lastSeen: serverTimestamp()
+                });
+                
+                document.getElementById('unlockMode').style.display = 'none';
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('profilePanel').style.display = 'block';
+                
+                await loadProfile(userCred.user);
+                
+                showMessage('profileMessage', '✅ Аккаунт разблокирован!', false);
+            } catch (error) {
+                console.error('Ошибка разблокировки:', error);
+                showMessage('unlockMessage', '❌ Неверный пароль', true);
+            }
         };
-        async function loadProfile(user){
-            currentUser=user; const snap=await getDoc(doc(db,"users",user.uid)); currentUserData=snap.data();
-            document.getElementById('userName').innerText=currentUserData.fullName||currentUserData.nickname||user.email.split('@')[0];
-            document.getElementById('userEmail').innerText=user.email;
-            document.getElementById('userAvatar').innerText=(currentUserData.fullName||user.email).charAt(0).toUpperCase();
-            document.getElementById('globalIdValue').innerText=currentUserData.globalId||'—';
-            document.getElementById('mainEmail').value=user.email;
-            ['fullName','birthDate','phoneNumber','snils','telegram','additionalEmail','cardNumber','bankName','country','city','address','postalCode'].forEach(f=>document.getElementById(f).value=currentUserData[f]||'');
-            if(currentUserData.globalId) generateQR(currentUserData.globalId);
+
+        // ==================== ВЫХОД ====================
+        window.logout = async () => {
+            if (codeInterval) clearInterval(codeInterval);
+            if (currentUser) {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    online: false,
+                    lastSeen: serverTimestamp()
+                }).catch(() => {});
+            }
+            await signOut(auth);
+        };
+
+        // ==================== НАВИГАЦИЯ ====================
+        window.showRegister = () => {
+            document.getElementById('loginMode').style.display = 'none';
+            document.getElementById('registerMode').style.display = 'block';
+            document.getElementById('authMessage').style.display = 'none';
+        };
+
+        window.showLogin = () => {
+            document.getElementById('loginMode').style.display = 'block';
+            document.getElementById('registerMode').style.display = 'none';
+            document.getElementById('authMessage').style.display = 'none';
+        };
+
+        // ==================== КОПИРОВАНИЕ GLOBAL ID ====================
+        window.copyGlobalId = () => {
+            const gid = document.getElementById('globalIdValue')?.innerText;
+            if (gid && gid !== '—') {
+                navigator.clipboard.writeText(gid);
+                showMessage('profileMessage', '✅ Global ID скопирован в буфер обмена!', false);
+            }
+        };
+
+        // ==================== ЗАБЫТЬ ВСЕ УСТРОЙСТВА ====================
+        window.forgetAllDevices = async () => {
+            if (!confirm('⚠️ Забыть все известные устройства?\n\nПри следующем входе с любого устройства потребуется 2FA код.')) {
+                return;
+            }
+            
+            if (!currentUser) return;
+            
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    knownDevices: []
+                });
+                
+                showMessage('profileMessage', '✅ Все устройства забыты. При следующем входе потребуется 2FA.', false);
+                renderDevicesList([]);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+            }
+        };
+
+        // ==================== СОХРАНЕНИЕ ПРОФИЛЯ ====================
+        window.saveProfile = async () => {
+            if (!currentUser) return;
+            
+            const profileData = {
+                fullName: document.getElementById('fullName')?.value || '',
+                birthDate: document.getElementById('birthDate')?.value || '',
+                phoneNumber: document.getElementById('phoneNumber')?.value || '',
+                snils: document.getElementById('snils')?.value || '',
+                telegram: document.getElementById('telegram')?.value || '',
+                additionalEmail: document.getElementById('additionalEmail')?.value || '',
+                cardNumber: document.getElementById('cardNumber')?.value || '',
+                bankName: document.getElementById('bankName')?.value || '',
+                country: document.getElementById('country')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                address: document.getElementById('address')?.value || '',
+                postalCode: document.getElementById('postalCode')?.value || '',
+                profileCompleted: true,
+                lastUpdated: serverTimestamp()
+            };
+            
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), profileData);
+                currentUserData = { ...currentUserData, ...profileData };
+                showMessage('profileMessage', '✅ Все данные сохранены!', false);
+            } catch (error) {
+                showMessage('profileMessage', '❌ Ошибка сохранения: ' + error.message, true);
+            }
+        };
+
+        // ==================== ЗАГРУЗКА ПРОФИЛЯ ====================
+        async function loadProfile(user) {
+            currentUser = user;
+            
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            currentUserData = userDoc.data();
+            
+            if (!currentUserData) {
+                const globalId = generateGlobalId();
+                await setDoc(doc(db, "users", user.uid), {
+                    email: user.email,
+                    globalId: globalId,
+                    createdAt: serverTimestamp(),
+                    globalIdAccess: true,
+                    icebergAccess: false,
+                    accountLocked: false,
+                    knownDevices: [{
+                        fingerprint: deviceFingerprint,
+                        ip: currentIP,
+                        userAgent: navigator.userAgent,
+                        addedAt: new Date()
+                    }]
+                });
+                currentUserData = { globalId, email: user.email };
+            }
+            
+            // Основная информация
+            document.getElementById('userName').innerText = currentUserData.fullName || currentUserData.nickname || user.email?.split('@')[0] || 'Пользователь';
+            document.getElementById('userEmail').innerText = user.email;
+            document.getElementById('userAvatar').innerText = (currentUserData.fullName || user.email || 'U').charAt(0).toUpperCase();
+            document.getElementById('globalIdValue').innerText = currentUserData.globalId || '—';
+            
+            // Поля профиля
+            document.getElementById('mainEmail').value = user.email;
+            document.getElementById('fullName').value = currentUserData.fullName || '';
+            document.getElementById('birthDate').value = currentUserData.birthDate || '';
+            document.getElementById('phoneNumber').value = currentUserData.phoneNumber || '';
+            document.getElementById('snils').value = currentUserData.snils || '';
+            document.getElementById('telegram').value = currentUserData.telegram || '';
+            document.getElementById('additionalEmail').value = currentUserData.additionalEmail || '';
+            document.getElementById('cardNumber').value = currentUserData.cardNumber || '';
+            document.getElementById('bankName').value = currentUserData.bankName || '';
+            document.getElementById('country').value = currentUserData.country || '';
+            document.getElementById('city').value = currentUserData.city || '';
+            document.getElementById('address').value = currentUserData.address || '';
+            document.getElementById('postalCode').value = currentUserData.postalCode || '';
+            
+            // Статус блокировки
+            const statusDiv = document.getElementById('lockStatusDisplay');
+            if (currentUserData.accountLocked) {
+                statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
+            }
+            
+            // QR-код
+            if (currentUserData.globalId) {
+                generateQR(currentUserData.globalId);
+            }
+            
+            // Список устройств
+            renderDevicesList(currentUserData.knownDevices || []);
+            
+            // Запуск отслеживания 2FA кодов
             watchFor2FACodes(user.uid);
         }
-        onAuthStateChanged(auth,async(user)=>{
-            if(user){ document.getElementById('authForm').style.display='none'; document.getElementById('profilePanel').style.display='block'; await loadProfile(user); }
-            else{ document.getElementById('authForm').style.display='block'; document.getElementById('profilePanel').style.display='none'; document.getElementById('codeBlock').style.display='none'; document.getElementById('noCodeMessage').style.display='block'; }
+
+        // ==================== ОТСЛЕЖИВАНИЕ АВТОРИЗАЦИИ ====================
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('profilePanel').style.display = 'block';
+                await getDeviceInfo();
+                await loadProfile(user);
+            } else {
+                if (codeInterval) clearInterval(codeInterval);
+                
+                currentUser = null;
+                currentUserData = null;
+                
+                document.getElementById('authForm').style.display = 'block';
+                document.getElementById('profilePanel').style.display = 'none';
+                document.getElementById('loginMode').style.display = 'block';
+                document.getElementById('registerMode').style.display = 'none';
+                document.getElementById('twoFactorLoginMode').style.display = 'none';
+                document.getElementById('unlockMode').style.display = 'none';
+                document.getElementById('codeBlock').style.display = 'none';
+                document.getElementById('noCodeMessage').style.display = 'block';
+                
+                document.getElementById('loginIdentifier').value = '';
+                document.getElementById('loginPassword').value = '';
+            }
         });
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         getDeviceInfo();
     </script>
 </body>
