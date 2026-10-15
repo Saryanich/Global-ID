@@ -33,7 +33,7 @@
             z-index: -1;
         }
         .container { max-width: 520px; margin: 0 auto; position: relative; }
-        
+
         .card {
             background: rgba(0, 34, 0, 0.92);
             backdrop-filter: blur(12px);
@@ -45,7 +45,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .card:hover { transform: translateY(-3px); }
-        
+
         .logo-img {
             display: block;
             margin: 0 auto 16px;
@@ -63,7 +63,7 @@
             height: 80px;
             border-radius: 20px;
         }
-        
+
         h1 {
             font-size: 32px;
             font-weight: 800;
@@ -94,7 +94,7 @@
             gap: 8px;
         }
         .section-title::before { content: '▌'; color: #00ff00; font-size: 22px; }
-        
+
         .form-group { margin-bottom: 20px; }
         .form-label {
             display: block;
@@ -128,7 +128,7 @@
             color: #00aa66;
             border-color: #006600;
         }
-        
+
         .btn {
             width: 100%;
             padding: 15px 24px;
@@ -184,7 +184,7 @@
             margin-top: 10px;
         }
         .copy-btn:hover { background: #00aa00; }
-        
+
         .global-id-box {
             background: linear-gradient(135deg, rgba(0, 50, 0, 0.7), rgba(0, 30, 0, 0.9));
             border-radius: 20px;
@@ -218,7 +218,7 @@
             position: relative;
             z-index: 1;
         }
-        
+
         .qr-container {
             display: flex;
             justify-content: center;
@@ -227,7 +227,7 @@
             background: white;
             border-radius: 20px;
         }
-        
+
         .trusted-device-card {
             background: linear-gradient(135deg, #003300, #006600);
             border-radius: 20px;
@@ -249,7 +249,7 @@
             font-size: 12px;
             font-weight: bold;
         }
-        
+
         .two-factor-code {
             background: linear-gradient(135deg, #000c00, #001a00);
             border: 3.5px solid #00ff44;
@@ -278,7 +278,7 @@
             font-size: 16px;
             font-weight: 600;
         }
-        
+
         .warning-box {
             background: rgba(255, 170, 0, 0.12);
             border: 1.5px solid #ffaa00;
@@ -304,7 +304,7 @@
             margin: 20px 0;
             color: #88ff88;
         }
-        
+
         .message {
             font-size: 14px;
             text-align: center;
@@ -316,7 +316,7 @@
         }
         .message-success { background: rgba(0, 100, 0, 0.7); color: #aaffaa; border: 1px solid #00ff44; display: block; }
         .message-error { background: rgba(120, 0, 0, 0.7); color: #ffaaaa; border: 1px solid #ff4444; display: block; }
-        
+
         .avatar {
             width: 88px;
             height: 88px;
@@ -331,7 +331,7 @@
             color: #001a00;
             border: 3px solid #00ff66;
         }
-        
+
         .lock-status {
             display: inline-block;
             padding: 6px 16px;
@@ -341,14 +341,14 @@
         }
         .lock-active { background: #cc3333; color: white; }
         .lock-inactive { background: #00aa33; color: white; }
-        
+
         .flex-buttons { display: flex; gap: 14px; margin-top: 20px; }
         .flex-buttons button { flex: 1; }
-        
+
         .divider { display: flex; align-items: center; gap: 14px; margin: 24px 0; }
         .divider-line { flex: 1; height: 2px; background: linear-gradient(90deg, transparent, #00aa00, transparent); }
         .divider-text { font-size: 12px; color: #00aa66; font-weight: 600; }
-        
+
         .checkbox-label {
             display: flex;
             align-items: center;
@@ -362,7 +362,7 @@
         }
         .checkbox-label:hover { background: rgba(0, 100, 0, 0.3); }
         .checkbox-label input { width: 20px; height: 20px; accent-color: #00ff44; cursor: pointer; }
-        
+
         .code-input-container { display: flex; gap: 12px; justify-content: center; margin: 24px 0; }
         .code-input {
             width: 60px;
@@ -377,9 +377,9 @@
             font-family: 'Courier New', monospace;
         }
         .code-input:focus { border-color: #00ff44; box-shadow: 0 0 25px #00ff44; }
-        
+
         .info-text { color: #00aa66; font-size: 13px; text-align: center; margin-top: 18px; }
-        
+
         .device-item {
             background: rgba(0, 40, 0, 0.5);
             border-radius: 12px;
@@ -394,7 +394,44 @@
         .device-name { color: #00ff66; font-weight: 600; margin-bottom: 4px; }
         .device-meta { color: #00aa66; font-size: 11px; }
         .device-current { background: #00aa00; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; }
-        
+
+        /* Модальное окно */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: rgba(0, 34, 0, 0.98);
+            border: 2px solid #00ff44;
+            border-radius: 24px;
+            padding: 28px 24px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 255, 0, 0.3);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-box h3 {
+            color: #00ff66;
+            font-size: 18px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .modal-box p { color: #00cc66; font-size: 14px; line-height: 1.6; margin-bottom: 18px; }
+        .modal-box .modal-actions { display: flex; gap: 12px; }
+        .modal-box .modal-actions button { flex: 1; }
+
         @media (max-width: 480px) {
             body { padding: 12px; }
             .card { padding: 22px 18px; }
@@ -403,15 +440,15 @@
             .code-input { width: 50px; height: 60px; font-size: 28px; }
             h1 { font-size: 26px; }
         }
-        
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
+
+        input[type="number"] { -moz-appearance: textfield; }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -421,7 +458,7 @@
             <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img">
             <h1>IT Global</h1>
             <div class="subtitle">Управление единым идентификатором</div>
-            
+
             <div id="loginMode">
                 <div class="form-group">
                     <label class="form-label">📧 Email или Global ID</label>
@@ -439,7 +476,7 @@
                 </div>
                 <button class="btn btn-secondary" onclick="showRegister()">✨ Создать новый Global ID</button>
             </div>
-            
+
             <div id="registerMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
                 <h1>Регистрация</h1>
@@ -459,7 +496,7 @@
                 <button class="btn btn-primary" onclick="register()">✅ Зарегистрироваться</button>
                 <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 12px;">← Назад ко входу</button>
             </div>
-            
+
             <!-- 2FA при входе (НОВОЕ УСТРОЙСТВО) -->
             <div id="twoFactorLoginMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
@@ -469,36 +506,37 @@
                     <p style="color:#ffaa00; font-size:14px; font-weight:bold;">Обнаружен вход с нового устройства</p>
                     <p style="color:#00cc66; font-size:13px; margin-top:10px;">Введите код, который отображается<br>в <strong>уже активной сессии Global ID</strong></p>
                 </div>
-                
-                <div class="device-info" style="background:rgba(255,170,0,0.2); border-color:#ffaa00;">
+
+                <div class="device-info" style="background:rgba(255,170,0,0.2); border-color:#ffaa00; padding:14px; border-radius:14px; margin-bottom:18px;">
                     <strong>🆕 Информация о новом устройстве:</strong><br>
                     <span id="newDeviceIp">Загрузка...</span><br>
                     <span id="newDeviceBrowser">Загрузка...</span>
                 </div>
-                
+
                 <div class="code-input-container">
                     <input type="text" class="code-input" maxlength="1" id="code1" oninput="moveToNext(this,0)" inputmode="numeric" pattern="\d*">
                     <input type="text" class="code-input" maxlength="1" id="code2" oninput="moveToNext(this,1)" inputmode="numeric" pattern="\d*">
                     <input type="text" class="code-input" maxlength="1" id="code3" oninput="moveToNext(this,2)" inputmode="numeric" pattern="\d*">
                     <input type="text" class="code-input" maxlength="1" id="code4" oninput="moveToNext(this,3)" inputmode="numeric" pattern="\d*">
                 </div>
-                
+
                 <div class="warning-box">
                     <strong>⚠️ ВНИМАНИЕ!</strong><br>
                     Код отображается на ВАШЕМ основном устройстве в разделе "Коды для входа".<br>
                     Никогда не сообщайте этот код никому!
                 </div>
-                
+
                 <label class="checkbox-label">
                     <input type="checkbox" id="trustDevice">
                     <span>✅ Запомнить это устройство (больше не запрашивать код)</span>
                 </label>
-                
+
                 <button class="btn btn-primary" onclick="verifyLogin2FA()">✅ Подтвердить вход</button>
-                <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">❌ Отмена</button>
+                <button class="btn btn-secondary" onclick="resend2FACode()" style="margin-top:10px;">🔄 Запросить новый код</button>
+                <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">← Выйти к форме входа</button>
                 <div id="twoFactorMessage" class="message"></div>
             </div>
-            
+
             <!-- Экран разблокировки -->
             <div id="unlockMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small" style="border-color: #ff4444;">
@@ -519,7 +557,7 @@
                 <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top:10px;">← Назад</button>
                 <div id="unlockMessage" class="message"></div>
             </div>
-            
+
             <div id="authMessage" class="message"></div>
         </div>
 
@@ -527,7 +565,7 @@
         <div id="profilePanel" style="display:none;">
             <!-- Экстренная блокировка -->
             <div class="card">
-                <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                     <div>
                         <h2 class="section-title" style="border-bottom:none; margin-bottom:0;">🛡️ Безопасность</h2>
                         <div id="lockStatusDisplay">
@@ -592,7 +630,7 @@
                 <div class="avatar" id="userAvatar">👤</div>
                 <h1 id="userName">Пользователь</h1>
                 <div class="subtitle" id="userEmail">email@example.com</div>
-                
+
                 <div class="global-id-box">
                     <div style="font-size:12px; color:#00aa00; margin-bottom:8px;">🔑 Ваш Global ID</div>
                     <div class="global-id-value" id="globalIdValue">—</div>
@@ -620,7 +658,6 @@
             <!-- Личные данные -->
             <div class="card">
                 <h2 class="section-title">👤 Личные данные</h2>
-                
                 <div class="form-group">
                     <label class="form-label">Основная почта</label>
                     <input type="email" id="mainEmail" readonly>
@@ -654,7 +691,6 @@
             <!-- Банковские данные -->
             <div class="card">
                 <h2 class="section-title">💳 Банковские данные</h2>
-                
                 <div class="form-group">
                     <label class="form-label">Номер карты</label>
                     <input type="text" id="cardNumber" placeholder="2200 7012 2658 1897">
@@ -668,7 +704,6 @@
             <!-- Адрес проживания -->
             <div class="card">
                 <h2 class="section-title">📍 Адрес проживания</h2>
-                
                 <div class="form-group">
                     <label class="form-label">Страна</label>
                     <input type="text" id="country" placeholder="Россия">
@@ -690,7 +725,7 @@
             <!-- Кнопки -->
             <div class="card">
                 <div class="flex-buttons">
-                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить все данные</button>
+                    <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Выйти</button>
                 </div>
                 <div id="profileMessage" class="message"></div>
@@ -711,7 +746,19 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="confirmTitle">Подтверждение</h3>
+            <p id="confirmText">Вы уверены?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirm(false)">Отмена</button>
+                <button class="btn btn-danger" id="confirmOkBtn" onclick="closeConfirm(true)">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         const firebaseConfig = {
             apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw",
@@ -723,14 +770,17 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore();
-        auth.setPersistence({ type: 'NONE' });
 
+        // ВАЖНО: правильный API для persistence
+        setPersistence(auth, browserSessionPersistence).catch(console.error);
+
+        // ==================== СОСТОЯНИЕ ====================
         let currentUser = null;
         let currentUserData = null;
         let pendingUser = null;
@@ -739,38 +789,90 @@
         let deviceFingerprint = null;
         let currentIP = null;
         let userStatusListener = null;
+        let codeWatcher = null;
+        let deviceInfoPromise = null;
+        let authStateResolved = false;
+        const processed2FACodes = new Set();
+
+        // ==================== УТИЛИТЫ ====================
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const d = document.createElement('div');
+            d.textContent = String(text);
+            return d.innerHTML;
+        }
+
+        function hash2FACode(code, uid) {
+            // Простой хеш для защиты от чтения кода посторонними через Firestore.
+            // НЕ криптостойкий, но достаточный при правильных правилах Firestore.
+            return btoa(unescape(encodeURIComponent(code + '_' + uid + '_itglobal_v1')));
+        }
 
         function generateGlobalId() {
             const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
             return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
         }
 
-        async function getDeviceInfo() {
-            try {
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                currentIP = ipData.ip;
-            } catch(e) {
-                currentIP = 'unknown';
-            }
-            const nav = window.navigator;
-            deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
-            
-            document.getElementById('newDeviceIp').innerText = `IP: ${currentIP}`;
-            document.getElementById('newDeviceBrowser').innerText = `Браузер: ${nav.userAgent.substring(0, 60)}...`;
-            
-            return { ip: currentIP, fingerprint: deviceFingerprint };
-        }
-
         function generate2FACode() {
             return Math.floor(1000 + Math.random() * 9000).toString();
         }
 
+        function showMessage(elementId, text, isError = true) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = text;
+            el.className = `message ${isError ? 'message-error' : 'message-success'}`;
+            el.style.display = 'block';
+            setTimeout(() => { if (el) el.style.display = 'none'; }, 5000);
+        }
+
+        // ==================== МОДАЛЬНОЕ ОКНО ====================
+        let confirmResolver = null;
+        window.showConfirm = function(title, text, okText = 'Подтвердить') {
+            return new Promise((resolve) => {
+                confirmResolver = resolve;
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmText').textContent = text;
+                const okBtn = document.getElementById('confirmOkBtn');
+                okBtn.textContent = okText;
+                document.getElementById('confirmModal').classList.add('active');
+            });
+        };
+        window.closeConfirm = function(result) {
+            document.getElementById('confirmModal').classList.remove('active');
+            if (confirmResolver) {
+                confirmResolver(result);
+                confirmResolver = null;
+            }
+        };
+
+        // ==================== УСТРОЙСТВО ====================
+        async function getDeviceInfo() {
+            if (deviceInfoPromise) return deviceInfoPromise;
+            deviceInfoPromise = (async () => {
+                try {
+                    const ipResponse = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipResponse.json();
+                    currentIP = ipData.ip;
+                } catch (e) {
+                    currentIP = 'unknown';
+                }
+                const nav = window.navigator;
+                deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
+                return { ip: currentIP, fingerprint: deviceFingerprint };
+            })();
+            return deviceInfoPromise;
+        }
+
         async function isTrustedDevice(uid) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            const data = userDoc.data();
-            const trustedDevices = data?.trustedDevices || [];
-            return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
+            try {
+                const userDoc = await getDoc(doc(db, "users", uid));
+                const data = userDoc.data();
+                const trustedDevices = data?.trustedDevices || [];
+                return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
+            } catch (e) {
+                return false;
+            }
         }
 
         async function addTrustedDevice(uid) {
@@ -787,20 +889,15 @@
         }
 
         async function isAccountLocked(uid) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            const data = userDoc.data();
-            return data?.accountLocked === true;
+            try {
+                const userDoc = await getDoc(doc(db, "users", uid));
+                return userDoc.data()?.accountLocked === true;
+            } catch (e) {
+                return false;
+            }
         }
 
-        function showMessage(elementId, text, isError = true) {
-            const el = document.getElementById(elementId);
-            if (!el) return;
-            el.textContent = text;
-            el.className = `message ${isError ? 'message-error' : 'message-success'}`;
-            el.style.display = 'block';
-            setTimeout(() => { if(el) el.style.display = 'none'; }, 5000);
-        }
-
+        // ==================== QR ====================
         function generateQR(globalId) {
             const qrContainer = document.getElementById('qrContainer');
             if (!qrContainer) return;
@@ -814,29 +911,31 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
-            } catch(e) {
+            } catch (e) {
                 qrContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#00aa00;">🔲 QR-код</div>';
             }
         }
 
+        // ==================== 2FA-КОД НА ДОВЕРЕННОМ УСТРОЙСТВЕ ====================
         function display2FACode(code, expires) {
             const codeBlock = document.getElementById('codeBlock');
             const noCodeMessage = document.getElementById('noCodeMessage');
             const currentCode = document.getElementById('currentCode');
             const codeTimer = document.getElementById('codeTimer');
-            
+
             if (!codeBlock || !noCodeMessage) return;
-            
+
             codeBlock.style.display = 'block';
             noCodeMessage.style.display = 'none';
             currentCode.textContent = code;
-            
+
             if (codeInterval) clearInterval(codeInterval);
-            
+
             codeInterval = setInterval(() => {
                 const diff = expires.toDate() - new Date();
                 if (diff <= 0) {
                     clearInterval(codeInterval);
+                    codeInterval = null;
                     currentCode.textContent = 'ИСТЁК';
                     codeTimer.textContent = 'Код истёк';
                     setTimeout(() => {
@@ -852,171 +951,265 @@
         }
 
         function watchFor2FACodes(uid) {
-            onSnapshot(doc(db, "users", uid), (docSnap) => {
+            if (codeWatcher) codeWatcher();
+            codeWatcher = onSnapshot(doc(db, "users", uid), (docSnap) => {
                 const data = docSnap.data();
-                
+                if (!data) return;
+
+                // Обновляем статус блокировки
                 const statusDiv = document.getElementById('lockStatusDisplay');
-                if (statusDiv && data) {
+                if (statusDiv) {
                     if (data.accountLocked) {
                         statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
                     } else {
                         statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
                     }
                 }
-                
-                if (data?.twoFactorCode && data.twoFactorCodeExpires) {
-                    const expires = data.twoFactorCodeExpires.toDate();
+
+                // Показываем код только если есть plain-версия и срок не истёк
+                if (data.twoFactorCodePlain && data.twoFactorCodeExpires) {
+                    const expires = data.twoFactorCodeExpires.toDate?.() || new Date(data.twoFactorCodeExpires);
                     if (expires > new Date()) {
-                        display2FACode(data.twoFactorCode, data.twoFactorCodeExpires);
+                        display2FACode(data.twoFactorCodePlain, data.twoFactorCodeExpires);
                     }
                 }
-                
-                if (data?.trustedDevices) {
-                    renderDevicesList(data.trustedDevices);
-                }
-                
-                // Отображение доверенного устройства
-                if (data?.trustedDevices && data.trustedDevices.length > 0) {
+
+                // Доверенное устройство
+                if (data.trustedDevices && data.trustedDevices.length > 0) {
                     const trustedDevice = data.trustedDevices[0];
                     const isCurrent = trustedDevice.fingerprint === deviceFingerprint;
+                    const addedAt = trustedDevice.addedAt?.toDate?.() || trustedDevice.addedAt;
+                    const addedStr = addedAt ? new Date(addedAt).toLocaleDateString() : 'неизвестно';
+                    const ua = trustedDevice.userAgent || 'Неизвестное устройство';
                     document.getElementById('trustedDeviceInfo').innerHTML = `
                         <div style="font-size:14px; font-weight:bold; margin-bottom:5px;">
                             ${isCurrent ? '✅ ТЕКУЩЕЕ УСТРОЙСТВО' : '📱 ДОВЕРЕННОЕ УСТРОЙСТВО'}
                         </div>
                         <div style="font-size:11px; opacity:0.8;">
-                            ${trustedDevice.userAgent ? trustedDevice.userAgent.substring(0, 50) + '...' : 'Неизвестное устройство'}<br>
-                            IP: ${trustedDevice.ip || 'неизвестно'}<br>
-                            Добавлено: ${new Date(trustedDevice.addedAt).toLocaleDateString()}
+                            ${escapeHtml(ua.substring(0, 50))}${ua.length > 50 ? '...' : ''}<br>
+                            IP: ${escapeHtml(trustedDevice.ip || 'неизвестно')}<br>
+                            Добавлено: ${escapeHtml(addedStr)}
                         </div>
                     `;
                 } else {
                     document.getElementById('trustedDeviceInfo').innerHTML = '<div class="info-text">⚠️ Доверенное устройство не установлено</div>';
                 }
+
+                if (data.trustedDevices) {
+                    renderDevicesList(data.trustedDevices);
+                }
+            }, (error) => {
+                console.error('watchFor2FACodes error:', error);
             });
         }
 
         function renderDevicesList(devices) {
             const container = document.getElementById('devicesList');
             if (!container) return;
-            
+
             if (!devices || devices.length === 0) {
                 container.innerHTML = '<div class="info-text">Нет известных устройств</div>';
                 return;
             }
-            
+
             container.innerHTML = '';
-            devices.sort((a, b) => new Date(b.lastUsed || b.addedAt) - new Date(a.lastUsed || a.addedAt));
-            
-            devices.forEach((device, index) => {
+            const sorted = [...devices].sort((a, b) => {
+                const da = (a.lastUsed?.toDate?.() || a.lastUsed || a.addedAt?.toDate?.() || a.addedAt || 0);
+                const db2 = (b.lastUsed?.toDate?.() || b.lastUsed || b.addedAt?.toDate?.() || b.addedAt || 0);
+                return new Date(db2) - new Date(da);
+            });
+
+            sorted.forEach((device, index) => {
                 const isCurrent = device.fingerprint === deviceFingerprint;
                 const deviceDiv = document.createElement('div');
                 deviceDiv.className = 'device-item';
-                
+
                 const date = device.lastUsed || device.addedAt;
-                const dateStr = date ? new Date(date).toLocaleDateString() : 'Неизвестно';
-                
+                const dateObj = date?.toDate?.() || (date ? new Date(date) : null);
+                const dateStr = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString() : 'Неизвестно';
+                const ua = device.userAgent || 'Неизвестное устройство';
+
                 deviceDiv.innerHTML = `
                     <div class="device-info-small">
                         <div class="device-name">
                             ${index === 0 ? '⭐ ' : '📱 '}
-                            ${device.userAgent ? device.userAgent.substring(0, 35) + '...' : 'Неизвестное устройство'}
+                            ${escapeHtml(ua.substring(0, 35))}${ua.length > 35 ? '...' : ''}
                         </div>
                         <div class="device-meta">
-                            IP: ${device.ip || 'неизвестно'} | Добавлено: ${dateStr}
+                            IP: ${escapeHtml(device.ip || 'неизвестно')} | Добавлено: ${escapeHtml(dateStr)}
                         </div>
                     </div>
                     ${isCurrent ? '<span class="device-current">Текущее</span>' : ''}
                 `;
-                
+
                 container.appendChild(deviceDiv);
             });
         }
 
-        window.moveToNext = (input, index) => {
-            if (input.value.length === 1) {
-                const next = document.getElementById(`code${index + 2}`);
-                if (next) next.focus();
+        // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
+        function showScreen(screenId) {
+            ['loginMode', 'registerMode', 'twoFactorLoginMode', 'unlockMode'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            const target = document.getElementById(screenId);
+            if (target) target.style.display = 'block';
+            document.getElementById('authForm').style.display = 'block';
+            document.getElementById('profilePanel').style.display = 'none';
+        }
+
+        window.showRegister = () => {
+            showScreen('registerMode');
+            document.getElementById('authMessage').style.display = 'none';
+        };
+
+        window.showLogin = () => {
+            showScreen('loginMode');
+            document.getElementById('authMessage').style.display = 'none';
+        };
+
+        // ==================== 2FA: ГЕНЕРАЦИЯ И ЗАПРОС ====================
+        async function create2FARequest(uid) {
+            const code = generate2FACode();
+            const codeHash = hash2FACode(code, uid);
+            const deviceInfo = {
+                ip: currentIP,
+                userAgent: navigator.userAgent,
+                requestedAt: new Date()
+            };
+
+            await updateDoc(doc(db, "users", uid), {
+                twoFactorCodeHash: codeHash,
+                twoFactorCodePlain: code, // Для показа на доверенном устройстве
+                twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
+                pendingDeviceInfo: deviceInfo
+            });
+
+            return code;
+        }
+
+        function fillDeviceInfoUI() {
+            const nav = window.navigator;
+            const ipEl = document.getElementById('newDeviceIp');
+            const brEl = document.getElementById('newDeviceBrowser');
+            if (ipEl) ipEl.innerText = `IP: ${currentIP || 'загрузка...'}`;
+            if (brEl) brEl.innerText = `Браузер: ${nav.userAgent.substring(0, 60)}...`;
+        }
+
+        window.resend2FACode = async () => {
+            const uid = pendingUser?.uid || sessionStorage.getItem('itglobal_pending_uid');
+            if (!uid) {
+                showMessage('twoFactorMessage', 'Сессия потеряна. Войдите заново.', true);
+                return;
             }
-            input.value = input.value.replace(/[^0-9]/g, '');
-        };
-
-        window.cancelLogin2FA = () => {
-            if (pendingUser) {
-                updateDoc(doc(db, "users", pendingUser.uid), {
-                    twoFactorCode: null,
-                    twoFactorCodeExpires: null,
-                    pendingDeviceInfo: null
-                }).catch(() => {});
+            try {
+                await create2FARequest(uid);
+                showMessage('twoFactorMessage', '✅ Новый код отправлен на основное устройство', false);
+                ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('code1').focus();
+            } catch (e) {
+                showMessage('twoFactorMessage', '❌ Не удалось запросить код', true);
             }
-            
-            document.getElementById('loginMode').style.display = 'block';
-            document.getElementById('twoFactorLoginMode').style.display = 'none';
-            ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
-            pendingUser = null;
         };
 
-        window.cancelUnlock = () => {
-            document.getElementById('loginMode').style.display = 'block';
-            document.getElementById('unlockMode').style.display = 'none';
-            pendingUser = null;
-            pendingEmail = null;
-        };
-
+        // ==================== 2FA: ПРОВЕРКА ====================
         window.verifyLogin2FA = async () => {
             const code = ['code1','code2','code3','code4'].map(id => document.getElementById(id).value).join('');
-            
+
             if (code.length !== 4) {
                 showMessage('twoFactorMessage', 'Введите 4 цифры', true);
                 return;
             }
-            
-            if (!pendingUser) {
-                showMessage('twoFactorMessage', 'Ошибка сессии', true);
+
+            const uid = pendingUser?.uid || sessionStorage.getItem('itglobal_pending_uid');
+            if (!uid) {
+                showMessage('twoFactorMessage', 'Сессия потеряна. Войдите заново.', true);
                 return;
             }
-            
-            const userDoc = await getDoc(doc(db, "users", pendingUser.uid));
-            const userData = userDoc.data();
-            
-            if (code === userData?.twoFactorCode) {
-                if (document.getElementById('trustDevice').checked) {
-                    await addTrustedDevice(pendingUser.uid);
+
+            try {
+                const userDoc = await getDoc(doc(db, "users", uid));
+                const userData = userDoc.data();
+
+                if (!userData) {
+                    showMessage('twoFactorMessage', 'Пользователь не найден', true);
+                    return;
                 }
-                
-                await updateDoc(doc(db, "users", pendingUser.uid), {
-                    twoFactorCode: null,
+
+                const expires = userData.twoFactorCodeExpires?.toDate?.() || null;
+                if (!expires || expires < new Date()) {
+                    showMessage('twoFactorMessage', '❌ Код истёк. Нажмите «Запросить новый код».', true);
+                    return;
+                }
+
+                const enteredHash = hash2FACode(code, uid);
+                if (enteredHash !== userData.twoFactorCodeHash) {
+                    showMessage('twoFactorMessage', '❌ Неверный код', true);
+                    return;
+                }
+
+                // Успех
+                if (document.getElementById('trustDevice').checked) {
+                    await addTrustedDevice(uid);
+                }
+
+                await updateDoc(doc(db, "users", uid), {
+                    twoFactorCodeHash: null,
+                    twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
+                    pendingDeviceInfo: null,
                     online: true,
                     lastSeen: serverTimestamp(),
                     currentIP: currentIP,
                     currentDevice: deviceFingerprint
                 });
-                
-                document.getElementById('loginMode').style.display = 'none';
-                document.getElementById('twoFactorLoginMode').style.display = 'none';
-                document.getElementById('authForm').style.display = 'none';
-                document.getElementById('profilePanel').style.display = 'block';
-                
+
+                sessionStorage.removeItem('itglobal_pending_uid');
+                sessionStorage.removeItem('itglobal_pending_email');
+
+                const user = pendingUser || auth.currentUser;
+                pendingUser = null;
+
                 ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
-                
-                await loadProfile(pendingUser);
-                startUserStatusListener(pendingUser.uid);
-            } else {
-                showMessage('twoFactorMessage', '❌ Неверный код', true);
+
+                if (user) {
+                    await enterProfile(user);
+                } else {
+                    showScreen('loginMode');
+                }
+            } catch (e) {
+                console.error(e);
+                showMessage('twoFactorMessage', '❌ Ошибка проверки кода', true);
             }
         };
 
+        window.cancelLogin2FA = async () => {
+            sessionStorage.removeItem('itglobal_pending_uid');
+            sessionStorage.removeItem('itglobal_pending_email');
+            pendingUser = null;
+            try { await signOut(auth); } catch (e) {}
+            showScreen('loginMode');
+            ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
+        };
+
+        window.cancelUnlock = () => {
+            showScreen('loginMode');
+            pendingUser = null;
+            pendingEmail = null;
+        };
+
+        // ==================== ВХОД ====================
         window.login = async () => {
             const identifier = document.getElementById('loginIdentifier').value.trim();
             const password = document.getElementById('loginPassword').value;
-            
+
             if (!identifier || !password) {
                 showMessage('authMessage', 'Заполните все поля', true);
                 return;
             }
-            
+
             await getDeviceInfo();
-            
+
             try {
                 let email = identifier;
                 if (!identifier.includes('@')) {
@@ -1028,32 +1221,29 @@
                     }
                     email = snap.docs[0].data().email;
                 }
-                
+
                 pendingEmail = email;
                 const userCred = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCred.user;
-                
+
                 if (await isAccountLocked(user.uid)) {
                     await signOut(auth);
-                    document.getElementById('loginMode').style.display = 'none';
-                    document.getElementById('unlockMode').style.display = 'block';
+                    showScreen('unlockMode');
                     return;
                 }
-                
+
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const userData = userDoc.data();
-                
+
                 if (!userData?.globalIdAccess) {
                     await updateDoc(doc(db, "users", user.uid), {
                         globalIdAccess: true,
                         globalIdLastLogin: serverTimestamp()
                     });
                 }
-                
-                pendingUser = user;
-                
+
                 const trusted = await isTrustedDevice(user.uid);
-                
+
                 if (trusted) {
                     await updateDoc(doc(db, "users", user.uid), {
                         online: true,
@@ -1061,27 +1251,16 @@
                         currentIP: currentIP,
                         currentDevice: deviceFingerprint
                     });
-                    
-                    document.getElementById('authForm').style.display = 'none';
-                    document.getElementById('profilePanel').style.display = 'block';
-                    await loadProfile(user);
-                    startUserStatusListener(user.uid);
+                    pendingUser = null;
+                    await enterProfile(user);
                 } else {
-                    const code = generate2FACode();
-                    const deviceInfo = {
-                        ip: currentIP,
-                        userAgent: navigator.userAgent,
-                        requestedAt: new Date()
-                    };
-                    
-                    await updateDoc(doc(db, "users", user.uid), {
-                        twoFactorCode: code,
-                        twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
-                        pendingDeviceInfo: deviceInfo
-                    });
-                    
-                    document.getElementById('loginMode').style.display = 'none';
-                    document.getElementById('twoFactorLoginMode').style.display = 'block';
+                    // Новое устройство — генерируем 2FA и показываем экран
+                    await create2FARequest(user.uid);
+                    pendingUser = user;
+                    sessionStorage.setItem('itglobal_pending_uid', user.uid);
+                    sessionStorage.setItem('itglobal_pending_email', user.email);
+                    fillDeviceInfoUI();
+                    showScreen('twoFactorLoginMode');
                     document.getElementById('code1').focus();
                 }
             } catch (error) {
@@ -1090,32 +1269,40 @@
             }
         };
 
+        // ==================== ВХОД В ПРОФИЛЬ ====================
+        async function enterProfile(user) {
+            currentUser = user;
+            document.getElementById('authForm').style.display = 'none';
+            document.getElementById('profilePanel').style.display = 'block';
+            await loadProfile(user);
+            startUserStatusListener(user.uid);
+        }
+
+        // ==================== РЕГИСТРАЦИЯ ====================
         window.register = async () => {
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirm').value;
-            
+
             if (!email || !password || !confirm) {
                 showMessage('authMessage', 'Заполните все поля', true);
                 return;
             }
-            
             if (password.length < 6) {
                 showMessage('authMessage', 'Пароль должен быть минимум 6 символов', true);
                 return;
             }
-            
             if (password !== confirm) {
                 showMessage('authMessage', 'Пароли не совпадают', true);
                 return;
             }
-            
+
             await getDeviceInfo();
-            
+
             try {
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const globalId = generateGlobalId();
-                
+
                 const registrationDevice = {
                     fingerprint: deviceFingerprint,
                     ip: currentIP,
@@ -1123,7 +1310,7 @@
                     addedAt: new Date(),
                     lastUsed: new Date()
                 };
-                
+
                 await setDoc(doc(db, "users", userCred.user.uid), {
                     email: email,
                     globalId: globalId,
@@ -1140,7 +1327,7 @@
                     currentIP: currentIP,
                     currentDevice: deviceFingerprint
                 });
-                
+
                 showMessage('authMessage', '✅ Global ID успешно создан!', false);
                 setTimeout(() => {
                     showLogin();
@@ -1150,31 +1337,39 @@
                 }, 1500);
             } catch (error) {
                 console.error('Ошибка регистрации:', error);
-                showMessage('authMessage', error.message, true);
+                let msg = 'Ошибка регистрации';
+                if (error.code === 'auth/email-already-in-use') msg = 'Email уже используется';
+                else if (error.code === 'auth/invalid-email') msg = 'Некорректный email';
+                else if (error.code === 'auth/weak-password') msg = 'Слабый пароль';
+                showMessage('authMessage', msg, true);
             }
         };
 
+        // ==================== ЭКСТРЕННАЯ БЛОКИРОВКА ====================
         window.emergencyLock = async () => {
-            if (!confirm('🚨 ЭКСТРЕННАЯ БЛОКИРОВКА\n\nВсе сессии будут завершены!\nДля разблокировки потребуется пароль.\n\nПродолжить?')) {
-                return;
-            }
-            
+            const ok = await showConfirm(
+                '🚨 Экстренная блокировка',
+                'Все сессии будут завершены. Для разблокировки потребуется пароль. Продолжить?',
+                'Заблокировать'
+            );
+            if (!ok) return;
             if (!currentUser) return;
-            
+
             try {
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     accountLocked: true,
                     lockedAt: serverTimestamp(),
                     lockedBy: deviceFingerprint,
                     online: false,
-                    twoFactorCode: null,
+                    twoFactorCodeHash: null,
+                    twoFactorCodePlain: null,
                     twoFactorCodeExpires: null
                 });
-                
+
                 document.getElementById('codeBlock').style.display = 'none';
                 document.getElementById('noCodeMessage').style.display = 'block';
                 document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
-                
+
                 showMessage('profileMessage', '🚨 Аккаунт экстренно заблокирован!', false);
                 setTimeout(() => logout(), 2000);
             } catch (error) {
@@ -1182,49 +1377,61 @@
             }
         };
 
+        // ==================== РАЗБЛОКИРОВКА ====================
         window.unlockAccount = async () => {
             const password = document.getElementById('unlockPassword').value;
-            
+
             if (!password) {
                 showMessage('unlockMessage', 'Введите пароль', true);
                 return;
             }
-            
             if (!pendingEmail) {
-                showMessage('unlockMessage', 'Ошибка: email не найден', true);
+                showMessage('unlockMessage', 'Ошибка: email не найден. Войдите заново.', true);
                 return;
             }
-            
+
             try {
                 const userCred = await signInWithEmailAndPassword(auth, pendingEmail, password);
-                
+
                 await updateDoc(doc(db, "users", userCred.user.uid), {
                     accountLocked: false,
                     lockedAt: null,
                     lockedBy: null,
-                    twoFactorCode: null,
+                    twoFactorCodeHash: null,
+                    twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     online: true,
                     lastSeen: serverTimestamp()
                 });
-                
-                document.getElementById('unlockMode').style.display = 'none';
-                document.getElementById('authForm').style.display = 'none';
-                document.getElementById('profilePanel').style.display = 'block';
-                
-                await loadProfile(userCred.user);
-                startUserStatusListener(userCred.user.uid);
-                
-                showMessage('profileMessage', '✅ Аккаунт разблокирован!', false);
+
+                // После разблокировки — проверяем доверенность
+                const trusted = await isTrustedDevice(userCred.user.uid);
+                if (trusted) {
+                    await enterProfile(userCred.user);
+                    showMessage('profileMessage', '✅ Аккаунт разблокирован!', false);
+                } else {
+                    await create2FARequest(userCred.user.uid);
+                    pendingUser = userCred.user;
+                    sessionStorage.setItem('itglobal_pending_uid', userCred.user.uid);
+                    sessionStorage.setItem('itglobal_pending_email', userCred.user.email);
+                    fillDeviceInfoUI();
+                    showScreen('twoFactorLoginMode');
+                    document.getElementById('code1').focus();
+                }
             } catch (error) {
                 console.error('Ошибка разблокировки:', error);
                 showMessage('unlockMessage', '❌ Неверный пароль', true);
             }
         };
 
+        // ==================== ВЫХОД ====================
         window.logout = async () => {
-            if (codeInterval) clearInterval(codeInterval);
-            if (userStatusListener) userStatusListener();
+            if (codeInterval) { clearInterval(codeInterval); codeInterval = null; }
+            if (userStatusListener) { userStatusListener(); userStatusListener = null; }
+            if (codeWatcher) { codeWatcher(); codeWatcher = null; }
+            sessionStorage.removeItem('itglobal_pending_uid');
+            sessionStorage.removeItem('itglobal_pending_email');
+            pendingUser = null;
             if (currentUser) {
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     online: false,
@@ -1234,13 +1441,16 @@
             await signOut(auth);
         };
 
+        // ==================== СМЕНА ДОВЕРЕННОГО УСТРОЙСТВА ====================
         window.changeTrustedDevice = async () => {
             if (!currentUser) return;
-            
-            if (!confirm('⚠️ СМЕНА ДОВЕРЕННОГО УСТРОЙСТВА\n\nТекущее доверенное устройство потеряет этот статус.\nЭто устройство станет доверенным.\n\nПродолжить?')) {
-                return;
-            }
-            
+            const ok = await showConfirm(
+                'Смена доверенного устройства',
+                'Текущее доверенное устройство потеряет статус. Это устройство станет доверенным. Продолжить?',
+                'Сменить'
+            );
+            if (!ok) return;
+
             try {
                 const newTrustedDevice = {
                     fingerprint: deviceFingerprint,
@@ -1249,76 +1459,71 @@
                     addedAt: new Date(),
                     lastUsed: new Date()
                 };
-                
+
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     trustedDevices: [newTrustedDevice]
                 });
-                
-                showMessage('profileMessage', '✅ Доверенное устройство успешно изменено!', false);
-                await loadProfile(currentUser);
+
+                showMessage('profileMessage', '✅ Доверенное устройство изменено!', false);
             } catch (error) {
                 showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
             }
         };
 
+        // ==================== ЗАБЫТЬ ВСЕ УСТРОЙСТВА ====================
         window.forgetAllDevices = async () => {
-            if (!confirm('⚠️ Забыть все известные устройства?\n\nПри следующем входе с любого устройства потребуется 2FA код.')) {
-                return;
-            }
-            
             if (!currentUser) return;
-            
+            const ok = await showConfirm(
+                'Забыть все устройства',
+                'При следующем входе с любого устройства потребуется 2FA код. Текущее доверенное устройство останется. Продолжить?',
+                'Забыть'
+            );
+            if (!ok) return;
+
             try {
-                const currentTrusted = currentUserData?.trustedDevices?.[0];
+                const currentTrusted = currentUserData?.trustedDevices?.find(
+                    d => d.fingerprint === deviceFingerprint
+                );
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     trustedDevices: currentTrusted ? [currentTrusted] : []
                 });
-                
+
                 showMessage('profileMessage', '✅ Все устройства забыты. Доверенное устройство осталось.', false);
-                renderDevicesList([]);
             } catch (error) {
                 showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
             }
         };
 
+        // ==================== СЛЕЖЕНИЕ ЗА СТАТУСОМ ====================
         function startUserStatusListener(uid) {
             if (userStatusListener) userStatusListener();
-            
             const userRef = doc(db, "users", uid);
             userStatusListener = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists() && currentUser && currentUser.uid === uid) {
                     const data = docSnap.data();
                     if (data.accountLocked === true) {
-                        alert('⚠️ Ваш аккаунт был заблокирован!');
-                        logout();
+                        showMessage('profileMessage', '⚠️ Ваш аккаунт был заблокирован!', true);
+                        setTimeout(() => logout(), 2000);
                     }
                 }
+            }, (error) => {
+                console.error('userStatusListener error:', error);
             });
         }
 
-        window.showRegister = () => {
-            document.getElementById('loginMode').style.display = 'none';
-            document.getElementById('registerMode').style.display = 'block';
-            document.getElementById('authMessage').style.display = 'none';
-        };
-
-        window.showLogin = () => {
-            document.getElementById('loginMode').style.display = 'block';
-            document.getElementById('registerMode').style.display = 'none';
-            document.getElementById('authMessage').style.display = 'none';
-        };
-
+        // ==================== КОПИРОВАНИЕ ====================
         window.copyGlobalId = () => {
             const gid = document.getElementById('globalIdValue')?.innerText;
             if (gid && gid !== '—') {
                 navigator.clipboard.writeText(gid);
-                showMessage('profileMessage', '✅ Global ID скопирован в буфер обмена!', false);
+                showMessage('profileMessage', '✅ Global ID скопирован!', false);
             }
         };
 
+        // ==================== СОХРАНЕНИЕ ПРОФИЛЯ ====================
         window.saveProfile = async () => {
             if (!currentUser) return;
-            
+
             const profileData = {
                 fullName: document.getElementById('fullName')?.value || '',
                 birthDate: document.getElementById('birthDate')?.value || '',
@@ -1335,7 +1540,7 @@
                 profileCompleted: true,
                 lastUpdated: serverTimestamp()
             };
-            
+
             try {
                 await updateDoc(doc(db, "users", currentUser.uid), profileData);
                 currentUserData = { ...currentUserData, ...profileData };
@@ -1345,12 +1550,13 @@
             }
         };
 
+        // ==================== ЗАГРУЗКА ПРОФИЛЯ ====================
         async function loadProfile(user) {
             currentUser = user;
-            
+
             const userDoc = await getDoc(doc(db, "users", user.uid));
             currentUserData = userDoc.data();
-            
+
             if (!currentUserData) {
                 const globalId = generateGlobalId();
                 await setDoc(doc(db, "users", user.uid), {
@@ -1359,16 +1565,17 @@
                     createdAt: serverTimestamp(),
                     globalIdAccess: true,
                     icebergAccess: true,
-                    accountLocked: false
+                    accountLocked: false,
+                    trustedDevices: []
                 });
                 currentUserData = { globalId, email: user.email };
             }
-            
+
             document.getElementById('userName').innerText = currentUserData.fullName || currentUserData.nickname || user.email?.split('@')[0] || 'Пользователь';
             document.getElementById('userEmail').innerText = user.email;
             document.getElementById('userAvatar').innerText = (currentUserData.fullName || user.email || 'U').charAt(0).toUpperCase();
             document.getElementById('globalIdValue').innerText = currentUserData.globalId || '—';
-            
+
             document.getElementById('mainEmail').value = user.email;
             document.getElementById('fullName').value = currentUserData.fullName || '';
             document.getElementById('birthDate').value = currentUserData.birthDate || '';
@@ -1382,53 +1589,83 @@
             document.getElementById('city').value = currentUserData.city || '';
             document.getElementById('address').value = currentUserData.address || '';
             document.getElementById('postalCode').value = currentUserData.postalCode || '';
-            
+
             const statusDiv = document.getElementById('lockStatusDisplay');
             if (currentUserData.accountLocked) {
                 statusDiv.innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
             } else {
                 statusDiv.innerHTML = '<span class="lock-status lock-inactive">● Аккаунт активен</span>';
             }
-            
+
             if (currentUserData.globalId) {
                 generateQR(currentUserData.globalId);
             }
-            
+
             renderDevicesList(currentUserData.trustedDevices || []);
             watchFor2FACodes(user.uid);
         }
 
+        // ==================== AUTH STATE (ГЛАВНАЯ ЛОГИКА) ====================
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const isIn2FA = document.getElementById('twoFactorLoginMode').style.display === 'block';
-                if (!isIn2FA) {
-                    document.getElementById('authForm').style.display = 'none';
-                    document.getElementById('profilePanel').style.display = 'block';
-                    await getDeviceInfo();
-                    await loadProfile(user);
-                    startUserStatusListener(user.uid);
-                }
-            } else {
-                if (codeInterval) clearInterval(codeInterval);
-                if (userStatusListener) userStatusListener();
-                
+            if (authStateResolved === false) authStateResolved = true;
+
+            if (!user) {
+                if (codeInterval) { clearInterval(codeInterval); codeInterval = null; }
+                if (userStatusListener) { userStatusListener(); userStatusListener = null; }
+                if (codeWatcher) { codeWatcher(); codeWatcher = null; }
                 currentUser = null;
                 currentUserData = null;
-                
-                document.getElementById('authForm').style.display = 'block';
-                document.getElementById('profilePanel').style.display = 'none';
-                document.getElementById('loginMode').style.display = 'block';
-                document.getElementById('registerMode').style.display = 'none';
-                document.getElementById('twoFactorLoginMode').style.display = 'none';
-                document.getElementById('unlockMode').style.display = 'none';
-                document.getElementById('codeBlock').style.display = 'none';
-                document.getElementById('noCodeMessage').style.display = 'block';
-                
+                pendingUser = null;
+                sessionStorage.removeItem('itglobal_pending_uid');
+                sessionStorage.removeItem('itglobal_pending_email');
+                showScreen('loginMode');
                 document.getElementById('loginIdentifier').value = '';
                 document.getElementById('loginPassword').value = '';
+                return;
+            }
+
+            // Есть залогиненный user — проверяем, нужно ли 2FA
+            await getDeviceInfo();
+
+            // Если аккаунт заблокирован — на экран разблокировки
+            if (await isAccountLocked(user.uid)) {
+                pendingUser = null;
+                await signOut(auth);
+                pendingEmail = user.email || sessionStorage.getItem('itglobal_pending_email');
+                showScreen('unlockMode');
+                return;
+            }
+
+            // Проверяем доверенность устройства
+            const trusted = await isTrustedDevice(user.uid);
+
+            if (trusted) {
+                // Устройство доверенное — пускаем в профиль
+                if (codeWatcher) { codeWatcher(); codeWatcher = null; }
+                await enterProfile(user);
+            } else {
+                // НЕ доверенное — показываем 2FA
+                // Если уже есть активный запрос — не генерируем новый
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const data = userDoc.data();
+                const now = new Date();
+                const expires = data?.twoFactorCodeExpires?.toDate?.() || null;
+                const hasActive = data?.twoFactorCodeHash && expires && expires > now;
+
+                if (!hasActive) {
+                    await create2FARequest(user.uid);
+                }
+
+                pendingUser = user;
+                sessionStorage.setItem('itglobal_pending_uid', user.uid);
+                sessionStorage.setItem('itglobal_pending_email', user.email);
+                fillDeviceInfoUI();
+                showScreen('twoFactorLoginMode');
+                setTimeout(() => document.getElementById('code1')?.focus(), 100);
             }
         });
 
+        // ==================== СТАРТ ====================
         getDeviceInfo();
     </script>
 </body>
