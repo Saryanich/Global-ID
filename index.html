@@ -58,11 +58,7 @@
             transition: transform 0.3s ease;
         }
         .logo-img:hover { transform: scale(1.02); }
-        .logo-img-small {
-            width: 80px;
-            height: 80px;
-            border-radius: 20px;
-        }
+        .logo-img-small { width: 80px; height: 80px; border-radius: 20px; }
 
         h1 {
             font-size: 32px;
@@ -395,7 +391,6 @@
         .device-meta { color: #00aa66; font-size: 11px; }
         .device-current { background: #00aa00; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; }
 
-        /* НОВОЕ: отображение pending device info */
         .pending-device-box {
             background: rgba(255, 170, 0, 0.15);
             border: 2px solid #ffaa00;
@@ -408,7 +403,6 @@
         }
         .pending-device-box strong { color: #ffbb33; }
 
-        /* Модальное окно */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -576,7 +570,6 @@
 
         <!-- ПАНЕЛЬ ПРОФИЛЯ -->
         <div id="profilePanel" style="display:none;">
-            <!-- Экстренная блокировка -->
             <div class="card">
                 <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                     <div>
@@ -594,7 +587,6 @@
                 </div>
             </div>
 
-            <!-- ДОВЕРЕННОЕ УСТРОЙСТВО -->
             <div class="card">
                 <h2 class="section-title">⭐ Доверенное устройство</h2>
                 <div class="trusted-device-card">
@@ -610,13 +602,11 @@
                 </div>
             </div>
 
-            <!-- 2FA Коды -->
             <div class="card">
                 <div class="avatar">🔐</div>
                 <h1>Коды для входа</h1>
                 <div class="subtitle">Появляются при попытке входа с нового устройства</div>
 
-                <!-- НОВОЕ: информация о запрашивающем устройстве -->
                 <div id="pendingDeviceBox" class="pending-device-box" style="display:none;">
                     <strong>📱 Запрос от:</strong><br>
                     <span id="pendingDeviceIp">—</span><br>
@@ -646,7 +636,6 @@
                 </div>
             </div>
 
-            <!-- Основная информация -->
             <div class="card">
                 <div class="avatar" id="userAvatar">👤</div>
                 <h1 id="userName">Пользователь</h1>
@@ -662,7 +651,6 @@
                 <div class="info-text">Отсканируйте QR-код, чтобы поделиться Global ID</div>
             </div>
 
-            <!-- Известные устройства -->
             <div class="card">
                 <h2 class="section-title">📱 Известные устройства</h2>
                 <div id="devicesList">
@@ -676,7 +664,6 @@
                 </div>
             </div>
 
-            <!-- Личные данные -->
             <div class="card">
                 <h2 class="section-title">👤 Личные данные</h2>
                 <div class="form-group">
@@ -709,7 +696,6 @@
                 </div>
             </div>
 
-            <!-- Банковские данные -->
             <div class="card">
                 <h2 class="section-title">💳 Банковские данные</h2>
                 <div class="form-group">
@@ -722,7 +708,6 @@
                 </div>
             </div>
 
-            <!-- Адрес -->
             <div class="card">
                 <h2 class="section-title">📍 Адрес проживания</h2>
                 <div class="form-group">
@@ -743,7 +728,6 @@
                 </div>
             </div>
 
-            <!-- Кнопки -->
             <div class="card">
                 <div class="flex-buttons">
                     <button class="btn btn-primary" onclick="saveProfile()">💾 Сохранить</button>
@@ -752,7 +736,6 @@
                 <div id="profileMessage" class="message"></div>
             </div>
 
-            <!-- Информация -->
             <div class="card">
                 <h2 class="section-title">ℹ️ Что такое Global ID?</h2>
                 <p style="color:#00cc66; font-size:13px; line-height:1.6;">
@@ -823,8 +806,7 @@
                 .join('');
         }
 
-        // ЕДИНЫЙ формат хэша 2FA — ТОЧНО такой же, как в Айсберге:
-        // code|uid|iceberg_2fa_salt_v1
+        // ЕДИНЫЙ формат хэша 2FA — точно как в Айсберге
         async function hash2FACode(code, uid) {
             return await sha256Hex(`${code}|${uid}|iceberg_2fa_salt_v1`);
         }
@@ -952,7 +934,7 @@
             }
         }
 
-        // ==================== 2FA: ОТОБРАЖЕНИЕ КОДА ====================
+        // ==================== 2FA: ОТОБРАЖЕНИЕ ====================
         function display2FACode(code, expires) {
             const codeBlock = document.getElementById('codeBlock');
             const noCodeMessage = document.getElementById('noCodeMessage');
@@ -994,7 +976,6 @@
                 const data = docSnap.data();
                 if (!data) return;
 
-                // Статус блокировки
                 const statusDiv = document.getElementById('lockStatusDisplay');
                 if (statusDiv) {
                     if (data.accountLocked) {
@@ -1004,7 +985,6 @@
                     }
                 }
 
-                // Показываем код для входа (совместимо с Айсбергом)
                 if (data.twoFactorCodePlain && data.twoFactorCodeExpires) {
                     const expires = data.twoFactorCodeExpires.toDate?.() || new Date(data.twoFactorCodeExpires);
                     if (expires > new Date()) {
@@ -1012,7 +992,6 @@
                     }
                 }
 
-                // НОВОЕ: показываем информацию о запрашивающем устройстве
                 if (data.pendingDeviceInfo) {
                     const info = data.pendingDeviceInfo;
                     const box = document.getElementById('pendingDeviceBox');
@@ -1029,7 +1008,6 @@
                     if (box) box.style.display = 'none';
                 }
 
-                // Доверенное устройство
                 if (data.trustedDevices && data.trustedDevices.length > 0) {
                     const trustedDevice = data.trustedDevices[0];
                     const isCurrent = trustedDevice.fingerprint === deviceFingerprint;
@@ -1126,7 +1104,6 @@
         // ==================== 2FA: ГЕНЕРАЦИЯ ====================
         async function create2FARequest(uid) {
             const code = generate2FACode();
-            // ВАЖНО: await, т.к. SHA-256 асинхронный
             const codeHash = await hash2FACode(code, uid);
             const deviceInfo = {
                 ip: currentIP,
@@ -1198,14 +1175,12 @@
                     return;
                 }
 
-                // ВАЖНО: await, SHA-256 асинхронный
                 const enteredHash = await hash2FACode(code, uid);
                 if (enteredHash !== userData.twoFactorCodeHash) {
                     showMessage('twoFactorMessage', '❌ Неверный код', true);
                     return;
                 }
 
-                // Успех
                 if (document.getElementById('trustDevice').checked) {
                     await addTrustedDevice(uid);
                 }
@@ -1256,6 +1231,9 @@
         };
 
         // ==================== ВХОД ====================
+        // Ищем email двумя способами:
+        //   1. Если введён Global ID — читаем global_ids/{globalId}.email (публичный get)
+        //   2. Если коллекция global_ids недоступна — fallback на users (where + limit 1)
         window.login = async () => {
             const identifier = document.getElementById('loginIdentifier').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -1269,14 +1247,43 @@
 
             try {
                 let email = identifier;
+
                 if (!identifier.includes('@')) {
-                    const q = query(collection(db, "users"), where("globalId", "==", identifier));
-                    const snap = await getDocs(q);
-                    if (snap.empty) {
+                    // Введён Global ID — ищем email
+                    let foundEmail = null;
+
+                    // Способ 1: через global_ids
+                    try {
+                        const gidDoc = await getDoc(doc(db, 'global_ids', identifier));
+                        if (gidDoc.exists()) {
+                            foundEmail = gidDoc.data().email;
+                        }
+                    } catch (e) {
+                        console.warn('global_ids lookup failed:', e.message);
+                    }
+
+                    // Способ 2 (fallback): через users с limit 1
+                    if (!foundEmail) {
+                        try {
+                            const q = query(
+                                collection(db, "users"),
+                                where("globalId", "==", identifier),
+                                limit(1)
+                            );
+                            const snap = await getDocs(q);
+                            if (!snap.empty) {
+                                foundEmail = snap.docs[0].data().email;
+                            }
+                        } catch (e) {
+                            console.warn('users fallback lookup failed:', e.message);
+                        }
+                    }
+
+                    if (!foundEmail) {
                         showMessage('authMessage', 'Global ID не найден', true);
                         return;
                     }
-                    email = snap.docs[0].data().email;
+                    email = foundEmail;
                 }
 
                 pendingEmail = email;
@@ -1311,7 +1318,6 @@
                     pendingUser = null;
                     await enterProfile(user);
                 } else {
-                    // Новое устройство — создаём 2FA-запрос
                     await create2FARequest(user.uid);
                     pendingUser = user;
                     sessionStorage.setItem('itglobal_pending_uid', user.uid);
@@ -1322,7 +1328,13 @@
                 }
             } catch (error) {
                 console.error('Ошибка входа:', error);
-                showMessage('authMessage', 'Неверный email/Global ID или пароль', true);
+                let msg = 'Неверный email/Global ID или пароль';
+                if (error.code === 'auth/wrong-password') msg = 'Неверный пароль';
+                else if (error.code === 'auth/user-not-found') msg = 'Пользователь не найден';
+                else if (error.code === 'auth/too-many-requests') msg = 'Слишком много попыток';
+                else if (error.code === 'auth/invalid-email') msg = 'Неверный email';
+                else if (error.code === 'auth/invalid-credential') msg = 'Неверные данные';
+                showMessage('authMessage', msg, true);
             }
         };
 
@@ -1368,6 +1380,7 @@
                     lastUsed: new Date()
                 };
 
+                // 1. Основной документ в users
                 await setDoc(doc(db, "users", userCred.user.uid), {
                     email: email,
                     globalId: globalId,
@@ -1383,6 +1396,13 @@
                     trustedDevices: [registrationDevice],
                     currentIP: currentIP,
                     currentDevice: deviceFingerprint
+                });
+
+                // 2. Публичный маппинг globalId → { uid, email } для входа из других сервисов
+                await setDoc(doc(db, "global_ids", globalId), {
+                    uid: userCred.user.uid,
+                    email: email,
+                    createdAt: serverTimestamp()
                 });
 
                 showMessage('authMessage', '✅ Global ID успешно создан!', false);
@@ -1626,6 +1646,16 @@
                     accountLocked: false,
                     trustedDevices: []
                 });
+                // Создаём global_ids и на этот случай
+                try {
+                    await setDoc(doc(db, 'global_ids', globalId), {
+                        uid: user.uid,
+                        email: user.email,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (e) {
+                    console.warn('Не удалось создать global_ids:', e.message);
+                }
                 currentUserData = { globalId, email: user.email };
             }
 
