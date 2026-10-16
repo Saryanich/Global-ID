@@ -395,6 +395,19 @@
         .device-meta { color: #00aa66; font-size: 11px; }
         .device-current { background: #00aa00; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; }
 
+        /* НОВОЕ: отображение pending device info */
+        .pending-device-box {
+            background: rgba(255, 170, 0, 0.15);
+            border: 2px solid #ffaa00;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin: 20px 0;
+            color: #ffcc66;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .pending-device-box strong { color: #ffbb33; }
+
         /* Модальное окно */
         .modal-overlay {
             display: none;
@@ -597,11 +610,19 @@
                 </div>
             </div>
 
-            <!-- 2FA Коды (отображаются на основном устройстве) -->
+            <!-- 2FA Коды -->
             <div class="card">
                 <div class="avatar">🔐</div>
                 <h1>Коды для входа</h1>
                 <div class="subtitle">Появляются при попытке входа с нового устройства</div>
+
+                <!-- НОВОЕ: информация о запрашивающем устройстве -->
+                <div id="pendingDeviceBox" class="pending-device-box" style="display:none;">
+                    <strong>📱 Запрос от:</strong><br>
+                    <span id="pendingDeviceIp">—</span><br>
+                    <span id="pendingDeviceBrowser">—</span>
+                </div>
+
                 <div id="twoFactorSection">
                     <div class="two-factor-code" id="codeBlock" style="display:none;">
                         <div style="font-size:12px; color:#00aa00;">ТЕКУЩИЙ КОД ДЛЯ ВХОДА</div>
@@ -701,7 +722,7 @@
                 </div>
             </div>
 
-            <!-- Адрес проживания -->
+            <!-- Адрес -->
             <div class="card">
                 <h2 class="section-title">📍 Адрес проживания</h2>
                 <div class="form-group">
@@ -747,7 +768,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="confirmModal" class="modal-overlay">
         <div class="modal-box">
             <h3 id="confirmTitle">Подтверждение</h3>
@@ -777,7 +798,6 @@
         const auth = getAuth();
         const db = getFirestore();
 
-        // ВАЖНО: правильный API для persistence
         setPersistence(auth, browserSessionPersistence).catch(console.error);
 
         // ==================== СОСТОЯНИЕ ====================
@@ -794,18 +814,27 @@
         let authStateResolved = false;
         const processed2FACodes = new Set();
 
+        // ==================== SHA-256 (совместимость с Айсбергом) ====================
+        async function sha256Hex(text) {
+            const enc = new TextEncoder();
+            const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+            return Array.from(new Uint8Array(buf))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        // ЕДИНЫЙ формат хэша 2FA — ТОЧНО такой же, как в Айсберге:
+        // code|uid|iceberg_2fa_salt_v1
+        async function hash2FACode(code, uid) {
+            return await sha256Hex(`${code}|${uid}|iceberg_2fa_salt_v1`);
+        }
+
         // ==================== УТИЛИТЫ ====================
         function escapeHtml(text) {
             if (text === null || text === undefined) return '';
             const d = document.createElement('div');
             d.textContent = String(text);
             return d.innerHTML;
-        }
-
-        function hash2FACode(code, uid) {
-            // Простой хеш для защиты от чтения кода посторонними через Firestore.
-            // НЕ криптостойкий, но достаточный при правильных правилах Firestore.
-            return btoa(unescape(encodeURIComponent(code + '_' + uid + '_itglobal_v1')));
         }
 
         function generateGlobalId() {
@@ -826,6 +855,14 @@
             setTimeout(() => { if (el) el.style.display = 'none'; }, 5000);
         }
 
+        window.moveToNext = function(input, index) {
+            input.value = input.value.replace(/[^0-9]/g, '');
+            if (input.value.length === 1 && index < 3) {
+                const next = document.getElementById(`code${index + 2}`);
+                if (next) next.focus();
+            }
+        };
+
         // ==================== МОДАЛЬНОЕ ОКНО ====================
         let confirmResolver = null;
         window.showConfirm = function(title, text, okText = 'Подтвердить') {
@@ -833,8 +870,7 @@
                 confirmResolver = resolve;
                 document.getElementById('confirmTitle').textContent = title;
                 document.getElementById('confirmText').textContent = text;
-                const okBtn = document.getElementById('confirmOkBtn');
-                okBtn.textContent = okText;
+                document.getElementById('confirmOkBtn').textContent = okText;
                 document.getElementById('confirmModal').classList.add('active');
             });
         };
@@ -851,10 +887,10 @@
             if (deviceInfoPromise) return deviceInfoPromise;
             deviceInfoPromise = (async () => {
                 try {
-                    const ipResponse = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await ipResponse.json();
-                    currentIP = ipData.ip;
-                } catch (e) {
+                    const r = await fetch('https://api.ipify.org?format=json');
+                    const d = await r.json();
+                    currentIP = d.ip;
+                } catch {
                     currentIP = 'unknown';
                 }
                 const nav = window.navigator;
@@ -870,7 +906,7 @@
                 const data = userDoc.data();
                 const trustedDevices = data?.trustedDevices || [];
                 return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
-            } catch (e) {
+            } catch {
                 return false;
             }
         }
@@ -892,7 +928,7 @@
             try {
                 const userDoc = await getDoc(doc(db, "users", uid));
                 return userDoc.data()?.accountLocked === true;
-            } catch (e) {
+            } catch {
                 return false;
             }
         }
@@ -911,12 +947,12 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
-            } catch (e) {
+            } catch {
                 qrContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#00aa00;">🔲 QR-код</div>';
             }
         }
 
-        // ==================== 2FA-КОД НА ДОВЕРЕННОМ УСТРОЙСТВЕ ====================
+        // ==================== 2FA: ОТОБРАЖЕНИЕ КОДА ====================
         function display2FACode(code, expires) {
             const codeBlock = document.getElementById('codeBlock');
             const noCodeMessage = document.getElementById('noCodeMessage');
@@ -950,13 +986,15 @@
             }, 1000);
         }
 
+        // ==================== 2FA: WATCHER ====================
         function watchFor2FACodes(uid) {
             if (codeWatcher) codeWatcher();
+
             codeWatcher = onSnapshot(doc(db, "users", uid), (docSnap) => {
                 const data = docSnap.data();
                 if (!data) return;
 
-                // Обновляем статус блокировки
+                // Статус блокировки
                 const statusDiv = document.getElementById('lockStatusDisplay');
                 if (statusDiv) {
                     if (data.accountLocked) {
@@ -966,12 +1004,29 @@
                     }
                 }
 
-                // Показываем код только если есть plain-версия и срок не истёк
+                // Показываем код для входа (совместимо с Айсбергом)
                 if (data.twoFactorCodePlain && data.twoFactorCodeExpires) {
                     const expires = data.twoFactorCodeExpires.toDate?.() || new Date(data.twoFactorCodeExpires);
                     if (expires > new Date()) {
                         display2FACode(data.twoFactorCodePlain, data.twoFactorCodeExpires);
                     }
+                }
+
+                // НОВОЕ: показываем информацию о запрашивающем устройстве
+                if (data.pendingDeviceInfo) {
+                    const info = data.pendingDeviceInfo;
+                    const box = document.getElementById('pendingDeviceBox');
+                    const ipEl = document.getElementById('pendingDeviceIp');
+                    const brEl = document.getElementById('pendingDeviceBrowser');
+                    if (box && ipEl && brEl) {
+                        box.style.display = 'block';
+                        ipEl.textContent = `IP: ${info.ip || 'неизвестно'}`;
+                        const ua = info.userAgent || 'Неизвестное устройство';
+                        brEl.textContent = `Браузер: ${ua.substring(0, 60)}${ua.length > 60 ? '...' : ''}`;
+                    }
+                } else {
+                    const box = document.getElementById('pendingDeviceBox');
+                    if (box) box.style.display = 'none';
                 }
 
                 // Доверенное устройство
@@ -1068,10 +1123,11 @@
             document.getElementById('authMessage').style.display = 'none';
         };
 
-        // ==================== 2FA: ГЕНЕРАЦИЯ И ЗАПРОС ====================
+        // ==================== 2FA: ГЕНЕРАЦИЯ ====================
         async function create2FARequest(uid) {
             const code = generate2FACode();
-            const codeHash = hash2FACode(code, uid);
+            // ВАЖНО: await, т.к. SHA-256 асинхронный
+            const codeHash = await hash2FACode(code, uid);
             const deviceInfo = {
                 ip: currentIP,
                 userAgent: navigator.userAgent,
@@ -1080,7 +1136,7 @@
 
             await updateDoc(doc(db, "users", uid), {
                 twoFactorCodeHash: codeHash,
-                twoFactorCodePlain: code, // Для показа на доверенном устройстве
+                twoFactorCodePlain: code,
                 twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
                 pendingDeviceInfo: deviceInfo
             });
@@ -1107,7 +1163,7 @@
                 showMessage('twoFactorMessage', '✅ Новый код отправлен на основное устройство', false);
                 ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('code1').focus();
-            } catch (e) {
+            } catch {
                 showMessage('twoFactorMessage', '❌ Не удалось запросить код', true);
             }
         };
@@ -1142,7 +1198,8 @@
                     return;
                 }
 
-                const enteredHash = hash2FACode(code, uid);
+                // ВАЖНО: await, SHA-256 асинхронный
+                const enteredHash = await hash2FACode(code, uid);
                 if (enteredHash !== userData.twoFactorCodeHash) {
                     showMessage('twoFactorMessage', '❌ Неверный код', true);
                     return;
@@ -1187,7 +1244,7 @@
             sessionStorage.removeItem('itglobal_pending_uid');
             sessionStorage.removeItem('itglobal_pending_email');
             pendingUser = null;
-            try { await signOut(auth); } catch (e) {}
+            try { await signOut(auth); } catch {}
             showScreen('loginMode');
             ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
         };
@@ -1254,7 +1311,7 @@
                     pendingUser = null;
                     await enterProfile(user);
                 } else {
-                    // Новое устройство — генерируем 2FA и показываем экран
+                    // Новое устройство — создаём 2FA-запрос
                     await create2FARequest(user.uid);
                     pendingUser = user;
                     sessionStorage.setItem('itglobal_pending_uid', user.uid);
@@ -1363,7 +1420,8 @@
                     online: false,
                     twoFactorCodeHash: null,
                     twoFactorCodePlain: null,
-                    twoFactorCodeExpires: null
+                    twoFactorCodeExpires: null,
+                    pendingDeviceInfo: null
                 });
 
                 document.getElementById('codeBlock').style.display = 'none';
@@ -1400,11 +1458,11 @@
                     twoFactorCodeHash: null,
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
+                    pendingDeviceInfo: null,
                     online: true,
                     lastSeen: serverTimestamp()
                 });
 
-                // После разблокировки — проверяем доверенность
                 const trusted = await isTrustedDevice(userCred.user.uid);
                 if (trusted) {
                     await enterProfile(userCred.user);
@@ -1605,7 +1663,7 @@
             watchFor2FACodes(user.uid);
         }
 
-        // ==================== AUTH STATE (ГЛАВНАЯ ЛОГИКА) ====================
+        // ==================== AUTH STATE ====================
         onAuthStateChanged(auth, async (user) => {
             if (authStateResolved === false) authStateResolved = true;
 
@@ -1624,10 +1682,8 @@
                 return;
             }
 
-            // Есть залогиненный user — проверяем, нужно ли 2FA
             await getDeviceInfo();
 
-            // Если аккаунт заблокирован — на экран разблокировки
             if (await isAccountLocked(user.uid)) {
                 pendingUser = null;
                 await signOut(auth);
@@ -1636,16 +1692,12 @@
                 return;
             }
 
-            // Проверяем доверенность устройства
             const trusted = await isTrustedDevice(user.uid);
 
             if (trusted) {
-                // Устройство доверенное — пускаем в профиль
                 if (codeWatcher) { codeWatcher(); codeWatcher = null; }
                 await enterProfile(user);
             } else {
-                // НЕ доверенное — показываем 2FA
-                // Если уже есть активный запрос — не генерируем новый
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const data = userDoc.data();
                 const now = new Date();
