@@ -540,8 +540,28 @@
 
                 <button class="btn btn-primary" onclick="verifyLogin2FA()">✅ Подтвердить вход</button>
                 <button class="btn btn-secondary" onclick="resend2FACode()" style="margin-top:10px;">🔄 Запросить новый код</button>
+                <!-- НОВАЯ КНОПКА ВОССТАНОВЛЕНИЯ -->
+                <button class="btn btn-warning" onclick="switchToSecurityQuestions()" style="margin-top:10px;">❓ Ввести контрольный вопрос</button>
                 <button class="btn btn-secondary" onclick="cancelLogin2FA()" style="margin-top:10px;">← Выйти к форме входа</button>
                 <div id="twoFactorMessage" class="message"></div>
+            </div>
+
+            <!-- ЭКРАН ВОССТАНОВЛЕНИЯ ЧЕРЕЗ КОНТРОЛЬНЫЕ ВОПРОСЫ -->
+            <div id="securityQuestionsMode" style="display:none;">
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small" style="border-color: #ffaa00;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:48px; margin-bottom:10px;">🛡️</div>
+                    <h3 style="color:#00ff66; margin-bottom:8px;">Восстановление доступа</h3>
+                    <p style="color:#ffaa00; font-size:14px;">Ответьте на 3 вопроса, чтобы сбросить 2FA</p>
+                </div>
+
+                <div id="questionsContainer">
+                    <!-- Вопросы подгрузятся скриптом -->
+                </div>
+
+                <button class="btn btn-primary" onclick="submitSecurityAnswers()">✅ Восстановить доступ</button>
+                <button class="btn btn-secondary" onclick="cancelSecurityQuestions()" style="margin-top:10px;">← Назад к вводу кода</button>
+                <div id="securityQuestionsMessage" class="message"></div>
             </div>
 
             <!-- Экран разблокировки -->
@@ -664,6 +684,16 @@
                 </div>
             </div>
 
+            <!-- БЛОК КОНТРОЛЬНЫХ ВОПРОСОВ -->
+            <div class="card">
+                <h2 class="section-title">❓ Контрольные вопросы</h2>
+                <p style="color:#00cc66; font-size:13px; margin-bottom:15px;">
+                    Настройте 3 вопроса. Если вы потеряете доступ к устройству,<br>
+                    вы сможете восстановить вход, ответив на них.
+                </p>
+                <button class="btn btn-secondary" onclick="openSecuritySetup()">⚙️ Настроить вопросы</button>
+            </div>
+
             <div class="card">
                 <h2 class="section-title">👤 Личные данные</h2>
                 <div class="form-group">
@@ -763,6 +793,20 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКА ВОПРОСОВ -->
+    <div id="setupQuestionsModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>⚙️ Настройка контрольных вопросов</h3>
+            <p style="font-size:12px; color:#ffaa00;">Запомните ответы! Они понадобятся для восстановления.</p>
+            <div class="form-group"><label class="form-label">Вопрос 1</label><input type="text" id="setupQ0" placeholder="Например: Кличка первого питомца?" maxlength="100"><input type="text" id="setupA0" placeholder="Ответ" style="margin-top:8px;" maxlength="100"></div>
+            <div class="form-group"><label class="form-label">Вопрос 2</label><input type="text" id="setupQ1" placeholder="Введите свой вопрос" maxlength="100"><input type="text" id="setupA1" placeholder="Ответ" style="margin-top:8px;" maxlength="100"></div>
+            <div class="form-group"><label class="form-label">Вопрос 3</label><input type="text" id="setupQ2" placeholder="Введите свой вопрос" maxlength="100"><input type="text" id="setupA2" placeholder="Ответ" style="margin-top:8px;" maxlength="100"></div>
+            <button class="btn btn-primary" onclick="saveSecurityQuestions()">💾 Сохранить вопросы</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('setupQuestionsModal').classList.remove('active')" style="margin-top:10px;">Отмена</button>
+            <div id="setupQuestionsMessage" class="message"></div>
+        </div>
+    </div>
+
     <script type="module">
         const firebaseConfig = {
             apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw",
@@ -775,7 +819,7 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
@@ -797,7 +841,7 @@
         let authStateResolved = false;
         const processed2FACodes = new Set();
 
-        // ==================== SHA-256 (совместимость с Айсбергом) ====================
+        // ==================== SHA-256 ====================
         async function sha256Hex(text) {
             const enc = new TextEncoder();
             const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
@@ -806,9 +850,13 @@
                 .join('');
         }
 
-        // ЕДИНЫЙ формат хэша 2FA — точно как в Айсберге
         async function hash2FACode(code, uid) {
             return await sha256Hex(`${code}|${uid}|iceberg_2fa_salt_v1`);
+        }
+
+        async function hashSecurityAnswer(answer, uid) {
+            const cleanAnswer = String(answer).trim().toLowerCase();
+            return await sha256Hex(`${cleanAnswer}|${uid}|iceberg_security_q_v1`);
         }
 
         // ==================== УТИЛИТЫ ====================
@@ -887,9 +935,10 @@
                 const userDoc = await getDoc(doc(db, "users", uid));
                 const data = userDoc.data();
                 const trustedDevices = data?.trustedDevices || [];
+                if (trustedDevices.length === 0) return false;
                 return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
             } catch {
-                return false;
+                return false; // Если ошибка — требуем 2FA
             }
         }
 
@@ -1081,7 +1130,7 @@
 
         // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
         function showScreen(screenId) {
-            ['loginMode', 'registerMode', 'twoFactorLoginMode', 'unlockMode'].forEach(id => {
+            ['loginMode', 'registerMode', 'twoFactorLoginMode', 'securityQuestionsMode', 'unlockMode'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -1230,10 +1279,145 @@
             pendingEmail = null;
         };
 
+        // ==================== ВОССТАНОВЛЕНИЕ ПО ВОПРОСАМ ====================
+        window.switchToSecurityQuestions = async () => {
+            const uid = pendingUser?.uid || sessionStorage.getItem('itglobal_pending_uid');
+            if (!uid) return showMessage('twoFactorMessage', 'Ошибка сессии', true);
+
+            try {
+                const d = await getDoc(doc(db, "users", uid));
+                const qs = d.data()?.securityQuestions || [];
+
+                if (qs.length !== 3) {
+                    return showMessage('twoFactorMessage', '⚠️ Контрольные вопросы не настроены', true);
+                }
+
+                showScreen('securityQuestionsMode');
+
+                const container = document.getElementById('questionsContainer');
+                container.innerHTML = '';
+                qs.forEach((q, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    div.innerHTML = `
+                        <label class="form-label">${i + 1}. ${escapeHtml(q.question)}</label>
+                        <input type="text" id="secAnswer${i}" placeholder="Ваш ответ" autocomplete="off">
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                showMessage('twoFactorMessage', 'Ошибка загрузки вопросов', true);
+            }
+        };
+
+        window.submitSecurityAnswers = async () => {
+            const answers = [
+                document.getElementById('secAnswer0').value.trim(),
+                document.getElementById('secAnswer1').value.trim(),
+                document.getElementById('secAnswer2').value.trim()
+            ];
+
+            if (!answers[0] || !answers[1] || !answers[2]) {
+                return showMessage('securityQuestionsMessage', 'Ответьте на все 3 вопроса', true);
+            }
+
+            const uid = pendingUser?.uid || sessionStorage.getItem('itglobal_pending_uid');
+            if (!uid) return showMessage('securityQuestionsMessage', 'Ошибка сессии', true);
+
+            showMessage('securityQuestionsMessage', 'Проверка...', false);
+
+            try {
+                const d = await getDoc(doc(db, "users", uid));
+                const qs = d.data()?.securityQuestions || [];
+
+                for (let i = 0; i < 3; i++) {
+                    const inputHash = await hashSecurityAnswer(answers[i], uid);
+                    if (inputHash !== qs[i].answerHash) {
+                        return showMessage('securityQuestionsMessage', `❌ Неверный ответ на вопрос ${i + 1}`, true);
+                    }
+                }
+
+                // Успех — доверяем устройству и сбрасываем 2FA
+                await addTrustedDevice(uid);
+                await updateDoc(doc(db, "users", uid), {
+                    twoFactorCodeHash: null,
+                    twoFactorCodePlain: null,
+                    twoFactorCodeExpires: null,
+                    pendingDeviceInfo: null,
+                    online: true,
+                    lastSeen: serverTimestamp(),
+                    currentIP: currentIP,
+                    currentDevice: deviceFingerprint
+                });
+
+                sessionStorage.removeItem('itglobal_pending_uid');
+                sessionStorage.removeItem('itglobal_pending_email');
+
+                const user = pendingUser || auth.currentUser;
+                pendingUser = null;
+
+                showMessage('securityQuestionsMessage', '✅ Доступ восстановлен!', false);
+                setTimeout(async () => {
+                    if (user) {
+                        await enterProfile(user);
+                    } else {
+                        showScreen('loginMode');
+                    }
+                }, 1000);
+            } catch (e) {
+                console.error(e);
+                showMessage('securityQuestionsMessage', '❌ Ошибка проверки', true);
+            }
+        };
+
+        window.cancelSecurityQuestions = () => {
+            showScreen('twoFactorLoginMode');
+            document.getElementById('securityQuestionsMessage').style.display = 'none';
+        };
+
+        // ==================== НАСТРОЙКА ВОПРОСОВ ====================
+        window.openSecuritySetup = async () => {
+            if (!currentUser) return;
+            const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const d = await getDoc(doc(db, 'users', currentUser.uid));
+            const qs = d.data()?.securityQuestions || [];
+            
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`setupQ${i}`).value = qs[i]?.question || '';
+                document.getElementById(`setupA${i}`).value = ''; // Ответы не показываем
+            }
+            document.getElementById('setupQuestionsModal').classList.add('active');
+        };
+
+        window.saveSecurityQuestions = async () => {
+            if (!currentUser) return;
+            const qs = [];
+            for (let i = 0; i < 3; i++) {
+                const question = document.getElementById(`setupQ${i}`).value.trim();
+                const answer = document.getElementById(`setupA${i}`).value.trim();
+                
+                if (!question || !answer) {
+                    return showMessage('setupQuestionsMessage', 'Заполните все вопросы и ответы', true);
+                }
+                
+                qs.push({
+                    question: question,
+                    answerHash: await hashSecurityAnswer(answer, currentUser.uid)
+                });
+            }
+
+            try {
+                await updateDoc(doc(db, 'users', currentUser.uid), { securityQuestions: qs });
+                showMessage('setupQuestionsMessage', '✅ Вопросы сохранены!', false);
+                setTimeout(() => {
+                    document.getElementById('setupQuestionsModal').classList.remove('active');
+                }, 1500);
+            } catch (e) {
+                showMessage('setupQuestionsMessage', '❌ Ошибка сохранения', true);
+            }
+        };
+
         // ==================== ВХОД ====================
-        // Ищем email двумя способами:
-        //   1. Если введён Global ID — читаем global_ids/{globalId}.email (публичный get)
-        //   2. Если коллекция global_ids недоступна — fallback на users (where + limit 1)
         window.login = async () => {
             const identifier = document.getElementById('loginIdentifier').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -1249,10 +1433,7 @@
                 let email = identifier;
 
                 if (!identifier.includes('@')) {
-                    // Введён Global ID — ищем email
                     let foundEmail = null;
-
-                    // Способ 1: через global_ids
                     try {
                         const gidDoc = await getDoc(doc(db, 'global_ids', identifier));
                         if (gidDoc.exists()) {
@@ -1262,7 +1443,6 @@
                         console.warn('global_ids lookup failed:', e.message);
                     }
 
-                    // Способ 2 (fallback): через users с limit 1
                     if (!foundEmail) {
                         try {
                             const q = query(
@@ -1398,7 +1578,7 @@
                     currentDevice: deviceFingerprint
                 });
 
-                // 2. Публичный маппинг globalId → { uid, email } для входа из других сервисов
+                // 2. Публичный маппинг globalId → { uid, email }
                 await setDoc(doc(db, "global_ids", globalId), {
                     uid: userCred.user.uid,
                     email: email,
@@ -1646,7 +1826,6 @@
                     accountLocked: false,
                     trustedDevices: []
                 });
-                // Создаём global_ids и на этот случай
                 try {
                     await setDoc(doc(db, 'global_ids', globalId), {
                         uid: user.uid,
