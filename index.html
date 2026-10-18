@@ -1457,7 +1457,8 @@
 
         // ==================== ВХОД ====================
         window.login = async () => {
-            const identifier = document.getElementById('loginIdentifier').value.trim();
+            const rawIdentifier = document.getElementById('loginIdentifier').value;
+            const identifier = rawIdentifier.trim().replace(/\s+/g, '');
             const password = document.getElementById('loginPassword').value;
 
             if (!identifier || !password) {
@@ -1469,39 +1470,32 @@
 
             try {
                 let email = identifier;
-
                 if (!identifier.includes('@')) {
-                    let foundEmail = null;
-                    try {
-                        const gidDoc = await getDoc(doc(db, 'global_ids', identifier));
-                        if (gidDoc.exists()) {
-                            foundEmail = gidDoc.data().email;
-                        }
-                    } catch (e) {
-                        console.warn('global_ids lookup failed:', e.message);
-                    }
-
-                    if (!foundEmail) {
-                        try {
-                            const q = query(
-                                collection(db, "users"),
-                                where("globalId", "==", identifier),
-                                limit(1)
-                            );
-                            const snap = await getDocs(q);
-                            if (!snap.empty) {
-                                foundEmail = snap.docs[0].data().email;
-                            }
-                        } catch (e) {
-                            console.warn('users fallback lookup failed:', e.message);
-                        }
-                    }
-
-                    if (!foundEmail) {
-                        showMessage('authMessage', 'Global ID не найден', true);
+                    if (!/^[0-9a-zA-Z]{22}$/.test(identifier)) {
+                        showMessage('authMessage', 'Global ID должен содержать 22 латинские буквы или цифры', true);
                         return;
                     }
-                    email = foundEmail;
+
+                    // Lookup happens before Firebase Auth sign-in. Rules must permit exact
+                    // reads of global_ids/{GlobalID} while request.auth is null.
+                    let gidDoc;
+                    try {
+                        gidDoc = await getDoc(doc(db, 'global_ids', identifier));
+                    } catch (lookupError) {
+                        console.error('Global ID lookup denied:', lookupError);
+                        showMessage('authMessage', 'Firebase запрещает поиск Global ID. Проверьте правила Firestore для global_ids.', true);
+                        return;
+                    }
+
+                    const mapping = gidDoc.exists() ? gidDoc.data() : null;
+                    if (!mapping || typeof mapping.email !== 'string' || !mapping.email.includes('@')) {
+                        showMessage('authMessage', 'Global ID не найден или не привязан к email. Войдите по email и проверьте профиль.', true);
+                        return;
+                    }
+                    email = mapping.email.trim();
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+                    showMessage('authMessage', 'Введите корректный email или Global ID', true);
+                    return;
                 }
 
                 pendingEmail = email;
@@ -1514,22 +1508,20 @@
                     return;
                 }
 
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                const userData = userDoc.data();
-
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : null;
                 if (userData?.globalIdAccess === false) {
                     await signOut(auth);
                     showMessage('authMessage', 'Доступ к Global-ID для этого аккаунта отключён.', true);
                     return;
                 }
-                await updateDoc(doc(db, "users", user.uid), {
+                await updateDoc(doc(db, 'users', user.uid), {
                     globalIdLastLogin: serverTimestamp()
                 });
 
                 const trusted = await isTrustedDevice(user.uid);
-
                 if (trusted) {
-                    await updateDoc(doc(db, "users", user.uid), {
+                    await updateDoc(doc(db, 'users', user.uid), {
                         online: true,
                         lastSeen: serverTimestamp(),
                         currentIP: currentIP,
@@ -1553,7 +1545,8 @@
                 else if (error.code === 'auth/user-not-found') msg = 'Пользователь не найден';
                 else if (error.code === 'auth/too-many-requests') msg = 'Слишком много попыток';
                 else if (error.code === 'auth/invalid-email') msg = 'Неверный email';
-                else if (error.code === 'auth/invalid-credential') msg = 'Неверные данные';
+                else if (error.code === 'auth/invalid-credential') msg = 'Неверный Global ID/email или пароль';
+                else if (error.code === 'permission-denied' || error.code === 'firestore/permission-denied') msg = 'Firebase Rules запрещают чтение профиля. Проверьте правила Firestore.';
                 showMessage('authMessage', msg, true);
             }
         };
