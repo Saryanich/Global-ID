@@ -869,11 +869,32 @@
 
         function generateGlobalId() {
             const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            return Array.from({length: 22}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const out = [];
+            // Rejection sampling avoids modulo bias and uses a cryptographically secure RNG.
+            const limit = Math.floor(256 / chars.length) * chars.length;
+            while (out.length < 22) {
+                const bytes = new Uint8Array(32);
+                crypto.getRandomValues(bytes);
+                for (const byte of bytes) {
+                    if (byte >= limit) continue;
+                    out.push(chars[byte % chars.length]);
+                    if (out.length === 22) break;
+                }
+            }
+            return out.join('');
         }
 
         function generate2FACode() {
-            return Math.floor(1000 + Math.random() * 9000).toString();
+            // Uniformly choose a four-digit code using the Web Crypto API.
+            const range = 9000;
+            const max = Math.floor(0x100000000 / range) * range;
+            const values = new Uint32Array(1);
+            let value;
+            do {
+                crypto.getRandomValues(values);
+                value = values[0];
+            } while (value >= max);
+            return String(1000 + (value % range));
         }
 
         function showMessage(elementId, text, isError = true) {
@@ -958,9 +979,12 @@
         async function isAccountLocked(uid) {
             try {
                 const userDoc = await getDoc(doc(db, "users", uid));
+                if (!userDoc.exists()) return true;
                 return userDoc.data()?.accountLocked === true;
-            } catch {
-                return false;
+            } catch (error) {
+                // Fail closed: never treat a Firestore read failure as permission to enter.
+                console.error('Не удалось проверить блокировку аккаунта:', error);
+                return true;
             }
         }
 
@@ -1217,6 +1241,15 @@
                     showMessage('twoFactorMessage', 'Пользователь не найден', true);
                     return;
                 }
+                if (userData.accountLocked === true) {
+                    await signOut(auth);
+                    pendingUser = null;
+                    sessionStorage.removeItem('itglobal_pending_uid');
+                    sessionStorage.removeItem('itglobal_pending_email');
+                    showScreen('unlockMode');
+                    showMessage('unlockMessage', 'Аккаунт заблокирован. Для продолжения разблокируйте его.', true);
+                    return;
+                }
 
                 const expires = userData.twoFactorCodeExpires?.toDate?.() || null;
                 if (!expires || expires < new Date()) {
@@ -1328,7 +1361,12 @@
 
             try {
                 const d = await getDoc(doc(db, "users", uid));
-                const qs = d.data()?.securityQuestions || [];
+                const recoveryData = d.data();
+                if (!recoveryData || recoveryData.accountLocked === true) {
+                    showMessage('securityQuestionsMessage', 'Аккаунт заблокирован или не найден. Разблокируйте его отдельно.', true);
+                    return;
+                }
+                const qs = recoveryData.securityQuestions || [];
 
                 for (let i = 0; i < 3; i++) {
                     const inputHash = await hashSecurityAnswer(answers[i], uid);
@@ -1479,12 +1517,14 @@
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const userData = userDoc.data();
 
-                if (!userData?.globalIdAccess) {
-                    await updateDoc(doc(db, "users", user.uid), {
-                        globalIdAccess: true,
-                        globalIdLastLogin: serverTimestamp()
-                    });
+                if (userData?.globalIdAccess === false) {
+                    await signOut(auth);
+                    showMessage('authMessage', 'Доступ к Global-ID для этого аккаунта отключён.', true);
+                    return;
                 }
+                await updateDoc(doc(db, "users", user.uid), {
+                    globalIdLastLogin: serverTimestamp()
+                });
 
                 const trusted = await isTrustedDevice(user.uid);
 
