@@ -617,8 +617,8 @@
                     <button class="btn btn-secondary" onclick="changeTrustedDevice()" style="margin-top:15px;">🔄 Сменить доверенное устройство</button>
                 </div>
                 <div class="info-text" style="color:#00aa66; margin-top:10px;">
-                    ✅ Только ОДНО устройство может быть доверенным.<br>
-                    Все остальные устройства требуют 2FA код при входе.
+                    Доверенные устройства сохраняются в этом браузере между сервисами IT Global.<br>
+                    Новые устройства должны пройти проверку 2FA.
                 </div>
             </div>
 
@@ -680,7 +680,7 @@
                     🗑 Забыть все устройства
                 </button>
                 <div class="info-text" style="color:#ffaa00;">
-                    После сброса потребуется 2FA при следующем входе с любого устройства
+                    Сброс удаляет доверие к устройствам. Для удалённого завершения уже открытых сессий нужна серверная ревокация токенов.
                 </div>
             </div>
 
@@ -936,6 +936,25 @@
         };
 
         // ==================== УСТРОЙСТВО ====================
+        // Общий идентификатор браузера для сервисов на одном origin saryanich.github.io.
+        // Он не заменяет Firebase Auth; он связывает доверенное устройство между сервисами.
+        function getSharedDeviceToken() {
+            const key = 'itglobal_shared_device_token';
+            try {
+                let token = localStorage.getItem(key);
+                if (!token) {
+                    const bytes = new Uint8Array(32);
+                    crypto.getRandomValues(bytes);
+                    token = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+                    localStorage.setItem(key, token);
+                }
+                return token;
+            } catch (error) {
+                console.warn('Не удалось сохранить токен устройства:', error);
+                return null;
+            }
+        }
+
         async function getDeviceInfo() {
             if (deviceInfoPromise) return deviceInfoPromise;
             deviceInfoPromise = (async () => {
@@ -948,7 +967,7 @@
                 }
                 const nav = window.navigator;
                 deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
-                return { ip: currentIP, fingerprint: deviceFingerprint };
+                return { ip: currentIP, fingerprint: deviceFingerprint, deviceToken: getSharedDeviceToken() };
             })();
             return deviceInfoPromise;
         }
@@ -959,7 +978,11 @@
                 const data = userDoc.data();
                 const trustedDevices = data?.trustedDevices || [];
                 if (trustedDevices.length === 0) return false;
-                return trustedDevices.some(d => d.fingerprint === deviceFingerprint);
+                const sharedToken = getSharedDeviceToken();
+                return trustedDevices.some(d =>
+                    (sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                    d.fingerprint === deviceFingerprint
+                );
             } catch {
                 return false; // Если ошибка — требуем 2FA
             }
@@ -967,7 +990,9 @@
 
         async function addTrustedDevice(uid) {
             const deviceInfo = {
+                deviceToken: getSharedDeviceToken(),
                 fingerprint: deviceFingerprint,
+                name: getFriendlyDeviceName(navigator.userAgent),
                 ip: currentIP,
                 userAgent: navigator.userAgent,
                 addedAt: new Date(),
@@ -1111,6 +1136,33 @@
             });
         }
 
+        function getFriendlyDeviceName(userAgent) {
+            const ua = String(userAgent || '');
+            let browser = 'Неизвестный браузер';
+            if (/Edg\//i.test(ua)) browser = 'Microsoft Edge';
+            else if (/Firefox\//i.test(ua)) browser = 'Mozilla Firefox';
+            else if (/CriOS\//i.test(ua)) browser = 'Google Chrome (iOS)';
+            else if (/Chrome\//i.test(ua)) browser = 'Google Chrome';
+            else if (/Safari\//i.test(ua)) browser = 'Safari';
+            else if (/OPR\//i.test(ua)) browser = 'Opera';
+
+            let os = 'Неизвестная система';
+            if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+            else if (/Android/i.test(ua)) os = 'Android';
+            else if (/Windows/i.test(ua)) os = 'Windows';
+            else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS';
+            else if (/Linux/i.test(ua)) os = 'Linux';
+            return `${browser} · ${os}`;
+        }
+
+        function sortTrustedDevices(devices) {
+            return [...(devices || [])].sort((a, b) => {
+                const da = a.lastUsed?.toDate?.() || a.lastUsed || a.addedAt?.toDate?.() || a.addedAt || 0;
+                const db2 = b.lastUsed?.toDate?.() || b.lastUsed || b.addedAt?.toDate?.() || b.addedAt || 0;
+                return new Date(db2) - new Date(da);
+            });
+        }
+
         function renderDevicesList(devices) {
             const container = document.getElementById('devicesList');
             if (!container) return;
@@ -1121,38 +1173,79 @@
             }
 
             container.innerHTML = '';
-            const sorted = [...devices].sort((a, b) => {
-                const da = (a.lastUsed?.toDate?.() || a.lastUsed || a.addedAt?.toDate?.() || a.addedAt || 0);
-                const db2 = (b.lastUsed?.toDate?.() || b.lastUsed || b.addedAt?.toDate?.() || b.addedAt || 0);
-                return new Date(db2) - new Date(da);
-            });
-
+            const sorted = sortTrustedDevices(devices);
             sorted.forEach((device, index) => {
-                const isCurrent = device.fingerprint === deviceFingerprint;
+                const sharedToken = getSharedDeviceToken();
+                const isCurrent = (!!sharedToken && !!device.deviceToken && device.deviceToken === sharedToken) ||
+                    device.fingerprint === deviceFingerprint;
                 const deviceDiv = document.createElement('div');
                 deviceDiv.className = 'device-item';
 
                 const date = device.lastUsed || device.addedAt;
                 const dateObj = date?.toDate?.() || (date ? new Date(date) : null);
-                const dateStr = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString() : 'Неизвестно';
+                const dateStr = dateObj && !isNaN(dateObj) ? dateObj.toLocaleString() : 'Неизвестно';
+                const name = device.name || getFriendlyDeviceName(device.userAgent);
                 const ua = device.userAgent || 'Неизвестное устройство';
 
                 deviceDiv.innerHTML = `
                     <div class="device-info-small">
-                        <div class="device-name">
-                            ${index === 0 ? '⭐ ' : '📱 '}
-                            ${escapeHtml(ua.substring(0, 35))}${ua.length > 35 ? '...' : ''}
-                        </div>
+                        <div class="device-name">${index === 0 ? '⭐ ' : '📱 '}${escapeHtml(name)}</div>
                         <div class="device-meta">
-                            IP: ${escapeHtml(device.ip || 'неизвестно')} | Добавлено: ${escapeHtml(dateStr)}
+                            ${escapeHtml(ua.substring(0, 100))}<br>
+                            IP: ${escapeHtml(device.ip || 'неизвестно')}<br>
+                            Последняя активность: ${escapeHtml(dateStr)}
                         </div>
                     </div>
-                    ${isCurrent ? '<span class="device-current">Текущее</span>' : ''}
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        ${isCurrent ? '<span class="device-current">Это устройство</span>' : ''}
+                        <button class="btn-danger" type="button" data-device-index="${index}" style="padding:7px 10px;font-size:12px;">
+                            ${isCurrent ? 'Выйти и удалить' : 'Удалить устройство'}
+                        </button>
+                    </div>
                 `;
-
+                deviceDiv.querySelector('button').addEventListener('click', () => window.removeTrustedDevice(index));
                 container.appendChild(deviceDiv);
             });
         }
+
+        window.removeTrustedDevice = async (sortedIndex) => {
+            if (!currentUser) return;
+            const devices = sortTrustedDevices(currentUserData?.trustedDevices || []);
+            const target = devices[sortedIndex];
+            if (!target) return;
+
+            const sharedToken = getSharedDeviceToken();
+            const isCurrent = (!!sharedToken && !!target.deviceToken && target.deviceToken === sharedToken) ||
+                target.fingerprint === deviceFingerprint;
+            const ok = await showConfirm(
+                'Удалить устройство',
+                isCurrent
+                    ? 'Это устройство будет удалено из доверенных, локальный токен будет очищен, и вы выйдете из Global ID на этом браузере. Продолжить?'
+                    : 'Устройство перестанет быть доверенным в Global ID и при следующем входе должно пройти проверку 2FA. Уже открытая сессия на другом устройстве может сохраняться до повторной проверки. Продолжить?',
+                'Удалить'
+            );
+            if (!ok) return;
+
+            try {
+                const identity = target.deviceToken
+                    ? d => d.deviceToken !== target.deviceToken
+                    : d => d.fingerprint !== target.fingerprint;
+                const remaining = (currentUserData?.trustedDevices || []).filter(identity);
+                await updateDoc(doc(db, 'users', currentUser.uid), { trustedDevices: remaining });
+                currentUserData = { ...currentUserData, trustedDevices: remaining };
+                renderDevicesList(remaining);
+
+                if (isCurrent) {
+                    try { localStorage.removeItem('itglobal_shared_device_token'); } catch {}
+                    await signOut(auth);
+                    window.location.reload();
+                    return;
+                }
+                showMessage('profileMessage', 'Устройство удалено из списка доверенных.', false);
+            } catch (error) {
+                showMessage('profileMessage', 'Не удалось удалить устройство: ' + error.message, true);
+            }
+        };
 
         // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
         function showScreen(screenId) {
@@ -1590,7 +1683,9 @@
                 const globalId = generateGlobalId();
 
                 const registrationDevice = {
+                    deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
+                    name: getFriendlyDeviceName(navigator.userAgent),
                     ip: currentIP,
                     userAgent: navigator.userAgent,
                     addedAt: new Date(),
@@ -1749,7 +1844,9 @@
 
             try {
                 const newTrustedDevice = {
+                    deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
+                    name: getFriendlyDeviceName(navigator.userAgent),
                     ip: currentIP,
                     userAgent: navigator.userAgent,
                     addedAt: new Date(),
