@@ -1874,8 +1874,10 @@
             if (!ok) return;
 
             try {
-                const currentTrusted = currentUserData?.trustedDevices?.find(
-                    d => d.fingerprint === deviceFingerprint
+                const sharedToken = getSharedDeviceToken();
+                const currentTrusted = currentUserData?.trustedDevices?.find(d =>
+                    (sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                    d.fingerprint === deviceFingerprint
                 );
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     trustedDevices: currentTrusted ? [currentTrusted] : []
