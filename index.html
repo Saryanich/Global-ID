@@ -819,7 +819,7 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
@@ -977,8 +977,9 @@
                 const userDoc = await getDoc(doc(db, "users", uid));
                 const data = userDoc.data();
                 const trustedDevices = data?.trustedDevices || [];
-                if (trustedDevices.length === 0) return false;
                 const sharedToken = getSharedDeviceToken();
+                if (sharedToken && (data?.revokedDeviceTokens || []).includes(sharedToken)) return false;
+                if (trustedDevices.length === 0) return false;
                 return trustedDevices.some(d =>
                     (sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
                     d.fingerprint === deviceFingerprint
@@ -999,7 +1000,8 @@
                 lastUsed: new Date()
             };
             await updateDoc(doc(db, "users", uid), {
-                trustedDevices: arrayUnion(deviceInfo)
+                trustedDevices: arrayUnion(deviceInfo),
+                revokedDeviceTokens: arrayRemove(deviceInfo.deviceToken)
             });
         }
 
@@ -1075,6 +1077,13 @@
             codeWatcher = onSnapshot(doc(db, "users", uid), (docSnap) => {
                 const data = docSnap.data();
                 if (!data) return;
+
+                const currentToken = getSharedDeviceToken();
+                if (currentUser?.uid === uid && currentToken && (data.revokedDeviceTokens || []).includes(currentToken)) {
+                    try { localStorage.removeItem('itglobal_shared_device_token'); } catch {}
+                    signOut(auth).then(() => window.location.replace('index.html?deviceRevoked=1')).catch(() => window.location.replace('index.html?deviceRevoked=1'));
+                    return;
+                }
 
                 const statusDiv = document.getElementById('lockStatusDisplay');
                 if (statusDiv) {
@@ -1221,7 +1230,7 @@
                 'Удалить устройство',
                 isCurrent
                     ? 'Это устройство будет удалено из доверенных, локальный токен будет очищен, и вы выйдете из Global ID на этом браузере. Продолжить?'
-                    : 'Устройство перестанет быть доверенным в Global ID и при следующем входе должно пройти проверку 2FA. Уже открытая сессия на другом устройстве может сохраняться до повторной проверки. Продолжить?',
+                    : 'Устройство будет удалено из доверенных и получит команду завершения активности. Если оно онлайн, Global ID и поддерживающие эту проверку сервисы выйдут из аккаунта при ближайшей проверке (обычно до 30 секунд). Продолжить?',
                 'Удалить'
             );
             if (!ok) return;
@@ -1231,7 +1240,11 @@
                     ? d => d.deviceToken !== target.deviceToken
                     : d => d.fingerprint !== target.fingerprint;
                 const remaining = (currentUserData?.trustedDevices || []).filter(identity);
-                await updateDoc(doc(db, 'users', currentUser.uid), { trustedDevices: remaining });
+                const revoked = target.deviceToken ? arrayUnion(target.deviceToken) : null;
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    trustedDevices: remaining,
+                    ...(revoked ? { revokedDeviceTokens: revoked } : {})
+                });
                 currentUserData = { ...currentUserData, trustedDevices: remaining };
                 renderDevicesList(remaining);
 
