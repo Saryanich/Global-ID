@@ -819,7 +819,7 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
@@ -884,6 +884,27 @@
                 }
             }
             return out.join('');
+        }
+
+        // Atomically reserve the candidate in global_ids. A concurrent registration
+        // cannot claim the same ID: Firestore retries conflicting transactions.
+        async function reserveUniqueGlobalId(uid, email) {
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const candidate = generateGlobalId();
+                const mappingRef = doc(db, 'global_ids', candidate);
+                const reserved = await runTransaction(db, async (transaction) => {
+                    const existing = await transaction.get(mappingRef);
+                    if (existing.exists()) return false;
+                    transaction.set(mappingRef, {
+                        uid,
+                        email,
+                        createdAt: serverTimestamp()
+                    });
+                    return true;
+                });
+                if (reserved) return candidate;
+            }
+            throw new Error('Не удалось подобрать свободный Global ID. Повторите попытку.');
         }
 
         function generate2FACode() {
@@ -1693,7 +1714,7 @@
             try {
                 await authPersistenceReady;
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                const globalId = generateGlobalId();
+                const globalId = await reserveUniqueGlobalId(userCred.user.uid, email);
 
                 const registrationDevice = {
                     deviceToken: getSharedDeviceToken(),
@@ -1723,13 +1744,7 @@
                     currentDevice: deviceFingerprint
                 });
 
-                // 2. Публичный маппинг globalId → { uid, email }
-                await setDoc(doc(db, "global_ids", globalId), {
-                    uid: userCred.user.uid,
-                    email: email,
-                    createdAt: serverTimestamp()
-                });
-
+                // Global ID is already atomically reserved in global_ids.
                 showMessage('authMessage', '✅ Global ID успешно создан!', false);
                 setTimeout(() => {
                     showLogin();
@@ -1966,7 +1981,7 @@
             currentUserData = userDoc.data();
 
             if (!currentUserData) {
-                const globalId = generateGlobalId();
+                const globalId = await reserveUniqueGlobalId(user.uid, user.email || '');
                 await setDoc(doc(db, "users", user.uid), {
                     email: user.email,
                     globalId: globalId,
@@ -1976,15 +1991,6 @@
                     accountLocked: false,
                     trustedDevices: []
                 });
-                try {
-                    await setDoc(doc(db, 'global_ids', globalId), {
-                        uid: user.uid,
-                        email: user.email,
-                        createdAt: serverTimestamp()
-                    });
-                } catch (e) {
-                    console.warn('Не удалось создать global_ids:', e.message);
-                }
                 currentUserData = { globalId, email: user.email };
             }
 
