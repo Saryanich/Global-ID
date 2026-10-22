@@ -818,14 +818,16 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore();
 
-        setPersistence(auth, browserSessionPersistence).catch(console.error);
+        const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
+            console.error("Не удалось включить постоянную авторизацию:", error);
+        });
 
         // ==================== СОСТОЯНИЕ ====================
         let currentUser = null;
@@ -1499,6 +1501,7 @@
                 }
 
                 pendingEmail = email;
+                await authPersistenceReady;
                 const userCred = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCred.user;
 
@@ -1582,6 +1585,7 @@
             await getDeviceInfo();
 
             try {
+                await authPersistenceReady;
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const globalId = generateGlobalId();
 
@@ -1682,6 +1686,7 @@
             }
 
             try {
+                await authPersistenceReady;
                 const userCred = await signInWithEmailAndPassword(auth, pendingEmail, password);
 
                 await updateDoc(doc(db, "users", userCred.user.uid), {
