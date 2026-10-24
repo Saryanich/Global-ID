@@ -856,6 +856,30 @@
             return await sha256Hex(`${code}|${uid}|iceberg_2fa_salt_v1`);
         }
 
+        // Совместимый лёгкий обратимый формат для показа кода из Firestore.
+        // Это обфускация, не защита от целевого атакующего: алгоритм находится в публичном JS.
+        function encrypt2FACodeForDisplay(code, uid) {
+            const key = `${uid}|iceberg_2fa_display_v1`;
+            const encoded = Array.from(String(code), (char, i) =>
+                String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+            ).join('');
+            return btoa(encoded);
+        }
+
+        function decrypt2FACodeForDisplay(payload, uid) {
+            try {
+                if (typeof payload !== 'string' || !payload) return null;
+                const key = `${uid}|iceberg_2fa_display_v1`;
+                const encoded = atob(payload);
+                const code = Array.from(encoded, (char, i) =>
+                    String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+                ).join('');
+                return /^\d{4}$/.test(code) ? code : null;
+            } catch {
+                return null;
+            }
+        }
+
         async function hashSecurityAnswer(answer, uid) {
             const cleanAnswer = String(answer).trim().toLowerCase();
             return await sha256Hex(`${cleanAnswer}|${uid}|iceberg_security_q_v1`);
@@ -1115,10 +1139,14 @@
                     }
                 }
 
-                if (data.twoFactorCodePlain && data.twoFactorCodeExpires) {
+                if ((data.twoFactorCodeEncrypted || data.twoFactorCodePlain) && data.twoFactorCodeExpires) {
                     const expires = data.twoFactorCodeExpires.toDate?.() || new Date(data.twoFactorCodeExpires);
                     if (expires > new Date()) {
-                        display2FACode(data.twoFactorCodePlain, data.twoFactorCodeExpires);
+                        // Plaintext fallback supports legacy pending codes until they expire.
+                        const code = data.twoFactorCodeEncrypted
+                            ? decrypt2FACodeForDisplay(data.twoFactorCodeEncrypted, uid)
+                            : data.twoFactorCodePlain;
+                        if (code) display2FACode(code, data.twoFactorCodeExpires);
                     }
                 }
 
@@ -1315,7 +1343,7 @@
 
             await updateDoc(doc(db, "users", uid), {
                 twoFactorCodeHash: codeHash,
-                twoFactorCodePlain: code,
+                twoFactorCodeEncrypted: encrypt2FACodeForDisplay(code, uid),
                 twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
                 pendingDeviceInfo: deviceInfo
             });
@@ -1398,6 +1426,7 @@
 
                 await updateDoc(doc(db, "users", uid), {
                     twoFactorCodeHash: null,
+                    twoFactorCodeEncrypted: null,
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     pendingDeviceInfo: null,
@@ -1508,6 +1537,7 @@
                 await addTrustedDevice(uid);
                 await updateDoc(doc(db, "users", uid), {
                     twoFactorCodeHash: null,
+                    twoFactorCodeEncrypted: null,
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     pendingDeviceInfo: null,
@@ -1779,6 +1809,7 @@
                     lockedBy: deviceFingerprint,
                     online: false,
                     twoFactorCodeHash: null,
+                    twoFactorCodeEncrypted: null,
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     pendingDeviceInfo: null
@@ -1817,6 +1848,7 @@
                     lockedAt: null,
                     lockedBy: null,
                     twoFactorCodeHash: null,
+                    twoFactorCodeEncrypted: null,
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     pendingDeviceInfo: null,
