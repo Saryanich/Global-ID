@@ -841,6 +841,10 @@
         let codeWatcher = null;
         let deviceInfoPromise = null;
         let authStateResolved = false;
+        // Prevent the auth observer from checking the account before the new users/{uid}
+        // document has finished writing during Firebase's automatic registration sign-in.
+        let registrationInProgress = false;
+        let registrationHandledUid = null;
         const processed2FACodes = new Set();
 
         // ==================== SHA-256 ====================
@@ -1743,6 +1747,7 @@
 
             try {
                 await authPersistenceReady;
+                registrationInProgress = true;
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const globalId = await reserveUniqueGlobalId(userCred.user.uid, email);
 
@@ -1774,15 +1779,21 @@
                     currentDevice: deviceFingerprint
                 });
 
-                // Global ID is already atomically reserved in global_ids.
-                showMessage('authMessage', '✅ Global ID успешно создан!', false);
-                setTimeout(() => {
-                    showLogin();
-                    document.getElementById('loginIdentifier').value = email;
-                    document.getElementById('loginPassword').value = password;
-                    login();
-                }, 1500);
+                // The profile now exists and explicitly starts unlocked. Mark this UID as
+                // handled before releasing the observer, then open the profile directly.
+                registrationHandledUid = userCred.user.uid;
+                registrationInProgress = false;
+                await enterProfile(userCred.user);
+                showMessage('profileMessage', '✅ Global ID успешно создан!', false);
             } catch (error) {
+                registrationInProgress = false;
+                // If Auth succeeded but profile setup failed, don't leave a half-created
+                // session that the lock guard would mislabel as a blocked account.
+                if (auth.currentUser) {
+                    try { await signOut(auth); } catch (signOutError) {
+                        console.warn('Не удалось завершить незавершённую регистрацию:', signOutError);
+                    }
+                }
                 console.error('Ошибка регистрации:', error);
                 let msg = 'Ошибка регистрации';
                 if (error.code === 'auth/email-already-in-use') msg = 'Email уже используется';
@@ -2071,6 +2082,7 @@
                 currentUser = null;
                 currentUserData = null;
                 pendingUser = null;
+                registrationHandledUid = null;
                 sessionStorage.removeItem('itglobal_pending_uid');
                 sessionStorage.removeItem('itglobal_pending_email');
                 showScreen('loginMode');
@@ -2078,6 +2090,10 @@
                 document.getElementById('loginPassword').value = '';
                 return;
             }
+
+            // createUserWithEmailAndPassword signs in immediately. Do not interpret
+            // the brief interval before registration writes users/{uid} as a locked account.
+            if (registrationInProgress || registrationHandledUid === user.uid) return;
 
             await getDeviceInfo();
 
