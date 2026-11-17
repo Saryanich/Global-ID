@@ -1008,13 +1008,8 @@
         async function getDeviceInfo() {
             if (deviceInfoPromise) return deviceInfoPromise;
             deviceInfoPromise = (async () => {
-                try {
-                    const r = await fetch('https://api.ipify.org?format=json');
-                    const d = await r.json();
-                    currentIP = d.ip;
-                } catch {
-                    currentIP = 'unknown';
-                }
+                // IP is not a device identifier and is not queried for trust decisions.
+                currentIP = 'не используется';
                 const nav = window.navigator;
                 deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
 
@@ -1187,6 +1182,8 @@
                 }
 
                 const expiresAt = asDate(data.twoFactorCodeExpires);
+                const helper = document.querySelector('#noCodeMessage p:last-child');
+                if (helper) helper.textContent = 'Код появится здесь, когда кто-то попытается войти с нового устройства';
                 const activeRequest = !!(data.twoFactorCodeHash && expiresAt && expiresAt > new Date());
                 let activeCode = null;
                 if (activeRequest) {
@@ -1203,7 +1200,7 @@
                     const brEl = document.getElementById('pendingDeviceBrowser');
                     if (box && ipEl && brEl) {
                         box.style.display = 'block';
-                        ipEl.textContent = `IP: ${info.ip || 'неизвестно'}`;
+                        ipEl.textContent = 'IP не используется для распознавания устройства';
                         const ua = info.userAgent || 'Неизвестное устройство';
                         brEl.textContent = `Браузер: ${ua.substring(0, 60)}${ua.length > 60 ? '...' : ''}`;
                     }
@@ -1391,7 +1388,7 @@
             const code = generate2FACode();
             const codeHash = await hash2FACode(code, uid);
             const deviceInfo = {
-                ip: currentIP || 'unknown',
+                ip: 'не используется',
                 userAgent: navigator.userAgent || '',
                 requestedAt: new Date()
             };
@@ -1428,7 +1425,7 @@
             const nav = window.navigator;
             const ipEl = document.getElementById('newDeviceIp');
             const brEl = document.getElementById('newDeviceBrowser');
-            if (ipEl) ipEl.innerText = `IP: ${currentIP || 'загрузка...'}`;
+            if (ipEl) ipEl.innerText = 'IP не влияет на проверку устройства';
             if (brEl) brEl.innerText = `Браузер: ${nav.userAgent.substring(0, 60)}...`;
         }
 
@@ -1481,7 +1478,7 @@
                     return;
                 }
 
-                const expires = userData.twoFactorCodeExpires?.toDate?.() || null;
+                const expires = asDate(userData.twoFactorCodeExpires);
                 if (!expires || expires < new Date()) {
                     showMessage('twoFactorMessage', '❌ Код истёк. Нажмите «Запросить новый код».', true);
                     return;
@@ -2186,8 +2183,9 @@
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const data = userDoc.data();
                 const now = new Date();
-                const expires = data?.twoFactorCodeExpires?.toDate?.() || null;
-                const hasActive = data?.twoFactorCodeHash && expires && expires > now;
+                const expires = asDate(data?.twoFactorCodeExpires);
+                const hasActive = !!(data?.twoFactorCodeHash && expires && expires > now &&
+                    (data?.twoFactorCodeEncrypted || data?.twoFactorCodePlain));
 
                 if (!hasActive) {
                     await create2FARequest(user.uid);
