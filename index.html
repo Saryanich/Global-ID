@@ -1042,10 +1042,12 @@
                 if (!trustedDevices.length) return false;
 
                 const tokenRevoked = !!(sharedToken && (data?.revokedDeviceTokens || []).includes(sharedToken));
+                const signatureRevoked = !!(deviceSignature &&
+                    (data?.revokedDeviceSignatures || []).includes(deviceSignature));
                 const match = trustedDevices.find(d =>
-                    (!tokenRevoked && sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
-                    (deviceSignature && d.deviceSignature && d.deviceSignature === deviceSignature) ||
-                    d.fingerprint === deviceFingerprint
+                    (!tokenRevoked && !signatureRevoked && sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                    (!signatureRevoked && deviceSignature && d.deviceSignature && d.deviceSignature === deviceSignature) ||
+                    (!tokenRevoked && !signatureRevoked && d.fingerprint === deviceFingerprint)
                 );
                 if (!match) return false;
 
@@ -1075,7 +1077,8 @@
             };
             await updateDoc(doc(db, "users", uid), {
                 trustedDevices: arrayUnion(deviceInfo),
-                revokedDeviceTokens: arrayRemove(deviceInfo.deviceToken)
+                revokedDeviceTokens: arrayRemove(deviceInfo.deviceToken),
+                revokedDeviceSignatures: arrayRemove(deviceSignature)
             });
         }
 
@@ -1130,6 +1133,8 @@
             if (currentCode) currentCode.textContent = '----';
             if (codeTimer) codeTimer.textContent = 'Нет активного кода';
             if (pendingBox) pendingBox.style.display = 'none';
+            const helper = document.querySelector('#noCodeMessage p:last-child');
+            if (helper) helper.textContent = 'Код появится здесь, когда кто-то попытается войти с нового устройства';
         }
 
         function display2FACode(code, expires) {
@@ -1166,7 +1171,10 @@
                 if (!data) return;
 
                 const currentToken = getSharedDeviceToken();
-                if (currentUser?.uid === uid && currentToken && (data.revokedDeviceTokens || []).includes(currentToken)) {
+                const currentTokenRevoked = !!(currentToken && (data.revokedDeviceTokens || []).includes(currentToken));
+                const currentSignatureRevoked = !!(deviceSignature &&
+                    (data.revokedDeviceSignatures || []).includes(deviceSignature));
+                if (currentUser?.uid === uid && (currentTokenRevoked || currentSignatureRevoked)) {
                     try { localStorage.removeItem('itglobal_shared_device_token'); } catch {}
                     signOut(auth).then(() => window.location.replace('index.html?deviceRevoked=1')).catch(() => window.location.replace('index.html?deviceRevoked=1'));
                     return;
@@ -1337,14 +1345,16 @@
             if (!ok) return;
 
             try {
-                const identity = target.deviceToken
-                    ? d => d.deviceToken !== target.deviceToken
-                    : d => d.fingerprint !== target.fingerprint;
-                const remaining = (currentUserData?.trustedDevices || []).filter(identity);
-                const revoked = target.deviceToken ? arrayUnion(target.deviceToken) : null;
+                const remaining = (currentUserData?.trustedDevices || []).filter(d => {
+                    if (target.deviceSignature && d.deviceSignature === target.deviceSignature) return false;
+                    if (target.deviceToken && d.deviceToken === target.deviceToken) return false;
+                    if (!target.deviceSignature && !target.deviceToken && d.fingerprint === target.fingerprint) return false;
+                    return true;
+                });
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     trustedDevices: remaining,
-                    ...(revoked ? { revokedDeviceTokens: revoked } : {})
+                    ...(target.deviceToken ? { revokedDeviceTokens: arrayUnion(target.deviceToken) } : {}),
+                    ...(target.deviceSignature ? { revokedDeviceSignatures: arrayUnion(target.deviceSignature) } : {})
                 });
                 currentUserData = { ...currentUserData, trustedDevices: remaining };
                 renderDevicesList(remaining);
@@ -1993,7 +2003,9 @@
                 };
 
                 await updateDoc(doc(db, "users", currentUser.uid), {
-                    trustedDevices: [newTrustedDevice]
+                    trustedDevices: [newTrustedDevice],
+                    revokedDeviceTokens: arrayRemove(newTrustedDevice.deviceToken),
+                    revokedDeviceSignatures: arrayRemove(deviceSignature)
                 });
 
                 showMessage('profileMessage', '✅ Доверенное устройство изменено!', false);
@@ -2020,7 +2032,9 @@
                     d.fingerprint === deviceFingerprint
                 );
                 await updateDoc(doc(db, "users", currentUser.uid), {
-                    trustedDevices: currentTrusted ? [currentTrusted] : []
+                    trustedDevices: currentTrusted ? [currentTrusted] : [],
+                    ...(sharedToken ? { revokedDeviceTokens: arrayRemove(sharedToken) } : {}),
+                    ...(deviceSignature ? { revokedDeviceSignatures: arrayRemove(deviceSignature) } : {})
                 });
 
                 showMessage('profileMessage', '✅ Все устройства забыты. Доверенное устройство осталось.', false);
