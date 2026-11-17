@@ -625,7 +625,7 @@
             <div class="card">
                 <div class="avatar">🔐</div>
                 <h1>Коды для входа</h1>
-                <div class="subtitle">Появляются при попытке входа с нового устройства</div>
+                <div class="subtitle">Появляются при входе с нового устройства. Смена IP или браузера сама по себе не должна создавать запрос.</div>
 
                 <div id="pendingDeviceBox" class="pending-device-box" style="display:none;">
                     <strong>📱 Запрос от:</strong><br>
@@ -835,7 +835,8 @@
         let pendingUser = null;
         let pendingEmail = null;
         let codeInterval = null;
-        let deviceFingerprint = null;
+        let deviceFingerprint = null; // legacy browser fingerprint
+        let deviceSignature = null;   // browser-independent device profile signature
         let currentIP = null;
         let userStatusListener = null;
         let codeWatcher = null;
@@ -1016,25 +1017,53 @@
                 }
                 const nav = window.navigator;
                 deviceFingerprint = btoa(`${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${nav.platform}`);
-                return { ip: currentIP, fingerprint: deviceFingerprint, deviceToken: getSharedDeviceToken() };
+
+                // Browser-neutral profile; excludes IP, browser name, user-agent and locale.
+                // This is a continuity heuristic, not a physical hardware ID.
+                const deviceProfile = {
+                    platform: nav.platform || '',
+                    screenWidth: screen.width || 0,
+                    screenHeight: screen.height || 0,
+                    colorDepth: screen.colorDepth || 0,
+                    pixelRatio: window.devicePixelRatio || 1,
+                    maxTouchPoints: nav.maxTouchPoints || 0,
+                    hardwareConcurrency: nav.hardwareConcurrency || 0,
+                    deviceMemory: nav.deviceMemory || 0,
+                    touch: ('ontouchstart' in window)
+                };
+                deviceSignature = await sha256Hex(JSON.stringify(deviceProfile));
+                return { ip: currentIP, fingerprint: deviceFingerprint, deviceSignature, deviceToken: getSharedDeviceToken() };
             })();
             return deviceInfoPromise;
         }
 
         async function isTrustedDevice(uid) {
             try {
-                const userDoc = await getDoc(doc(db, "users", uid));
+                const userRef = doc(db, "users", uid);
+                const userDoc = await getDoc(userRef);
                 const data = userDoc.data();
                 const trustedDevices = data?.trustedDevices || [];
                 const sharedToken = getSharedDeviceToken();
-                if (sharedToken && (data?.revokedDeviceTokens || []).includes(sharedToken)) return false;
-                if (trustedDevices.length === 0) return false;
-                return trustedDevices.some(d =>
-                    (sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                if (!trustedDevices.length) return false;
+
+                const tokenRevoked = !!(sharedToken && (data?.revokedDeviceTokens || []).includes(sharedToken));
+                const match = trustedDevices.find(d =>
+                    (!tokenRevoked && sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                    (deviceSignature && d.deviceSignature && d.deviceSignature === deviceSignature) ||
                     d.fingerprint === deviceFingerprint
                 );
-            } catch {
-                return false; // Если ошибка — требуем 2FA
+                if (!match) return false;
+
+                // Migrate a currently trusted browser to the browser-neutral signature.
+                if (deviceSignature && !match.deviceSignature) {
+                    const upgraded = trustedDevices.map(d => d === match ? { ...d, deviceSignature } : d);
+                    try { await updateDoc(userRef, { trustedDevices: upgraded }); }
+                    catch (migrationError) { console.warn('Не удалось обновить сигнатуру устройства:', migrationError); }
+                }
+                return true;
+            } catch (error) {
+                console.error('Не удалось проверить доверенное устройство:', error);
+                return false;
             }
         }
 
@@ -1042,6 +1071,7 @@
             const deviceInfo = {
                 deviceToken: getSharedDeviceToken(),
                 fingerprint: deviceFingerprint,
+                deviceSignature,
                 name: getFriendlyDeviceName(navigator.userAgent),
                 ip: currentIP,
                 userAgent: navigator.userAgent,
@@ -1086,37 +1116,50 @@
         }
 
         // ==================== 2FA: ОТОБРАЖЕНИЕ ====================
+        function asDate(value) {
+            if (!value) return null;
+            if (typeof value.toDate === 'function') return value.toDate();
+            const date = value instanceof Date ? value : new Date(value);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function hide2FACode() {
+            if (codeInterval) { clearInterval(codeInterval); codeInterval = null; }
+            const codeBlock = document.getElementById('codeBlock');
+            const noCodeMessage = document.getElementById('noCodeMessage');
+            const currentCode = document.getElementById('currentCode');
+            const codeTimer = document.getElementById('codeTimer');
+            const pendingBox = document.getElementById('pendingDeviceBox');
+            if (codeBlock) codeBlock.style.display = 'none';
+            if (noCodeMessage) noCodeMessage.style.display = 'block';
+            if (currentCode) currentCode.textContent = '----';
+            if (codeTimer) codeTimer.textContent = 'Нет активного кода';
+            if (pendingBox) pendingBox.style.display = 'none';
+        }
+
         function display2FACode(code, expires) {
             const codeBlock = document.getElementById('codeBlock');
             const noCodeMessage = document.getElementById('noCodeMessage');
             const currentCode = document.getElementById('currentCode');
             const codeTimer = document.getElementById('codeTimer');
-
-            if (!codeBlock || !noCodeMessage) return;
-
+            const expiresAt = asDate(expires);
+            if (!codeBlock || !noCodeMessage || !currentCode || !codeTimer || !expiresAt || expiresAt <= new Date()) {
+                hide2FACode();
+                return;
+            }
             codeBlock.style.display = 'block';
             noCodeMessage.style.display = 'none';
             currentCode.textContent = code;
-
             if (codeInterval) clearInterval(codeInterval);
-
-            codeInterval = setInterval(() => {
-                const diff = expires.toDate() - new Date();
-                if (diff <= 0) {
-                    clearInterval(codeInterval);
-                    codeInterval = null;
-                    currentCode.textContent = 'ИСТЁК';
-                    codeTimer.textContent = 'Код истёк';
-                    setTimeout(() => {
-                        codeBlock.style.display = 'none';
-                        noCodeMessage.style.display = 'block';
-                    }, 5000);
-                } else {
-                    const m = Math.floor(diff / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    codeTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
-                }
-            }, 1000);
+            const updateTimer = () => {
+                const diff = expiresAt.getTime() - Date.now();
+                if (diff <= 0) { hide2FACode(); return; }
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                codeTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            };
+            updateTimer();
+            codeInterval = setInterval(updateTimer, 1000);
         }
 
         // ==================== 2FA: WATCHER ====================
@@ -1143,19 +1186,18 @@
                     }
                 }
 
-                if ((data.twoFactorCodeEncrypted || data.twoFactorCodePlain) && data.twoFactorCodeExpires) {
-                    const expires = data.twoFactorCodeExpires.toDate?.() || new Date(data.twoFactorCodeExpires);
-                    if (expires > new Date()) {
-                        // Plaintext fallback supports legacy pending codes until they expire.
-                        const code = data.twoFactorCodeEncrypted
-                            ? decrypt2FACodeForDisplay(data.twoFactorCodeEncrypted, uid)
-                            : data.twoFactorCodePlain;
-                        if (code) display2FACode(code, data.twoFactorCodeExpires);
-                    }
+                const expiresAt = asDate(data.twoFactorCodeExpires);
+                const activeRequest = !!(data.twoFactorCodeHash && expiresAt && expiresAt > new Date());
+                let activeCode = null;
+                if (activeRequest) {
+                    activeCode = data.twoFactorCodeEncrypted
+                        ? decrypt2FACodeForDisplay(data.twoFactorCodeEncrypted, uid)
+                        : data.twoFactorCodePlain;
                 }
 
-                if (data.pendingDeviceInfo) {
-                    const info = data.pendingDeviceInfo;
+                if (activeRequest && activeCode) {
+                    display2FACode(activeCode, expiresAt);
+                    const info = data.pendingDeviceInfo || {};
                     const box = document.getElementById('pendingDeviceBox');
                     const ipEl = document.getElementById('pendingDeviceIp');
                     const brEl = document.getElementById('pendingDeviceBrowser');
@@ -1166,13 +1208,20 @@
                         brEl.textContent = `Браузер: ${ua.substring(0, 60)}${ua.length > 60 ? '...' : ''}`;
                     }
                 } else {
-                    const box = document.getElementById('pendingDeviceBox');
-                    if (box) box.style.display = 'none';
+                    hide2FACode();
+                    if (activeRequest) {
+                        const helper = document.querySelector('#noCodeMessage p:last-child');
+                        if (helper) helper.textContent = 'Запрос есть, но код не удалось прочитать. На новом устройстве запросите новый код.';
+                    }
                 }
 
                 if (data.trustedDevices && data.trustedDevices.length > 0) {
                     const trustedDevice = data.trustedDevices[0];
-                    const isCurrent = trustedDevice.fingerprint === deviceFingerprint;
+                    const currentToken = getSharedDeviceToken();
+                    const isCurrent =
+                        (!!currentToken && trustedDevice.deviceToken === currentToken) ||
+                        (!!deviceSignature && trustedDevice.deviceSignature === deviceSignature) ||
+                        trustedDevice.fingerprint === deviceFingerprint;
                     const addedAt = trustedDevice.addedAt?.toDate?.() || trustedDevice.addedAt;
                     const addedStr = addedAt ? new Date(addedAt).toLocaleDateString() : 'неизвестно';
                     const ua = trustedDevice.userAgent || 'Неизвестное устройство';
@@ -1239,6 +1288,7 @@
             sorted.forEach((device, index) => {
                 const sharedToken = getSharedDeviceToken();
                 const isCurrent = (!!sharedToken && !!device.deviceToken && device.deviceToken === sharedToken) ||
+                    (!!deviceSignature && device.deviceSignature === deviceSignature) ||
                     device.fingerprint === deviceFingerprint;
                 const deviceDiv = document.createElement('div');
                 deviceDiv.className = 'device-item';
@@ -1278,6 +1328,7 @@
 
             const sharedToken = getSharedDeviceToken();
             const isCurrent = (!!sharedToken && !!target.deviceToken && target.deviceToken === sharedToken) ||
+                (!!deviceSignature && target.deviceSignature === deviceSignature) ||
                 target.fingerprint === deviceFingerprint;
             const ok = await showConfirm(
                 'Удалить устройство',
@@ -1336,23 +1387,41 @@
         };
 
         // ==================== 2FA: ГЕНЕРАЦИЯ ====================
-        async function create2FARequest(uid) {
+        async function create2FARequest(uid, forceNew = false) {
             const code = generate2FACode();
             const codeHash = await hash2FACode(code, uid);
             const deviceInfo = {
-                ip: currentIP,
-                userAgent: navigator.userAgent,
+                ip: currentIP || 'unknown',
+                userAgent: navigator.userAgent || '',
                 requestedAt: new Date()
             };
+            const userRef = doc(db, "users", uid);
+            return await runTransaction(db, async (transaction) => {
+                const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists()) throw new Error('Профиль пользователя не найден');
+                const data = userSnap.data();
+                const expiresAt = asDate(data.twoFactorCodeExpires);
+                const existingCode = data.twoFactorCodeEncrypted
+                    ? decrypt2FACodeForDisplay(data.twoFactorCodeEncrypted, uid)
+                    : data.twoFactorCodePlain;
 
-            await updateDoc(doc(db, "users", uid), {
-                twoFactorCodeHash: codeHash,
-                twoFactorCodeEncrypted: encrypt2FACodeForDisplay(code, uid),
-                twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
-                pendingDeviceInfo: deviceInfo
+                // Avoid replacing a still-valid code when login and auth observer race.
+                if (!forceNew && data.twoFactorCodeHash && expiresAt && expiresAt > new Date() && existingCode) {
+                    return existingCode;
+                }
+                const requestId = crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                transaction.update(userRef, {
+                    twoFactorCodeHash: codeHash,
+                    twoFactorCodeEncrypted: encrypt2FACodeForDisplay(code, uid),
+                    twoFactorCodePlain: null,
+                    twoFactorCodeExpires: new Date(Date.now() + 5 * 60 * 1000),
+                    twoFactorRequestId: requestId,
+                    pendingDeviceInfo: { ...deviceInfo, requestId }
+                });
+                return code;
             });
-
-            return code;
         }
 
         function fillDeviceInfoUI() {
@@ -1370,7 +1439,7 @@
                 return;
             }
             try {
-                await create2FARequest(uid);
+                await create2FARequest(uid, true);
                 showMessage('twoFactorMessage', '✅ Новый код отправлен на основное устройство', false);
                 ['code1','code2','code3','code4'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('code1').focus();
@@ -1754,6 +1823,7 @@
                 const registrationDevice = {
                     deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
+                    deviceSignature,
                     name: getFriendlyDeviceName(navigator.userAgent),
                     ip: currentIP,
                     userAgent: navigator.userAgent,
@@ -1917,6 +1987,7 @@
                 const newTrustedDevice = {
                     deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
+                    deviceSignature,
                     name: getFriendlyDeviceName(navigator.userAgent),
                     ip: currentIP,
                     userAgent: navigator.userAgent,
@@ -1948,6 +2019,7 @@
                 const sharedToken = getSharedDeviceToken();
                 const currentTrusted = currentUserData?.trustedDevices?.find(d =>
                     (sharedToken && d.deviceToken && d.deviceToken === sharedToken) ||
+                    (deviceSignature && d.deviceSignature === deviceSignature) ||
                     d.fingerprint === deviceFingerprint
                 );
                 await updateDoc(doc(db, "users", currentUser.uid), {
