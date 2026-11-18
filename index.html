@@ -315,7 +315,7 @@
 
         .password-recovery-link {
             display:block; width:100%; margin-top:10px; padding:8px 12px;
-            border:0; background:transparent; color:#9bdcff; font:600 13px inherit;
+            border:0; background:transparent; color:#9bdcff; font-family:inherit; font-size:13px; font-weight:600;
             text-align:right; cursor:pointer; opacity:.92; transition:opacity .2s ease, color .2s ease;
         }
         .password-recovery-link:hover { color:#fff; opacity:1; text-decoration:underline; }
@@ -1533,10 +1533,10 @@
         };
 
         async function resolveRecoveryEmail(identifier) {
-            const value = String(identifier || '').trim().replace(/\\s+/g, '');
+            const value = String(identifier || '').trim().replace(/\s+/g, '');
             if (!value) throw new Error('Введите email или Global ID в поле входа.');
             if (value.includes('@')) {
-                if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) {
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                     throw new Error('Введите корректный email.');
                 }
                 return value;
@@ -2164,6 +2164,14 @@
                 }
             } catch (error) {
                 console.error('Ошибка разблокировки:', error);
+                pendingUnlockAfter2FA = false;
+                unlockHandledUid = null;
+                sessionStorage.removeItem('itglobal_pending_unlock');
+                if (auth.currentUser) {
+                    try { await signOut(auth); } catch (signOutError) {
+                        console.warn('Не удалось завершить незавершённую сессию разблокировки:', signOutError);
+                    }
+                }
                 const message = error.code === 'auth/too-many-requests'
                     ? 'Слишком много попыток. Подождите и попробуйте позже.'
                     : error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password'
@@ -2175,7 +2183,7 @@
             }
         };
 
-        // ==================== ВЫХОД =================(
+        // ==================== ВЫХОД ====================
         window.logout = async () => {
             if (codeInterval) { clearInterval(codeInterval); codeInterval = null; }
             if (userStatusListener) { userStatusListener(); userStatusListener = null; }
