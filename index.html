@@ -818,7 +818,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
@@ -1830,6 +1830,7 @@
 
             await getDeviceInfo();
 
+            let registrationProfileCreated = false;
             try {
                 await authPersistenceReady;
                 registrationInProgress = true;
@@ -1884,6 +1885,7 @@
                     if (created) globalId = candidate;
                 }
                 if (!globalId) throw new Error('Не удалось создать свободный Global ID. Повторите регистрацию.');
+                registrationProfileCreated = true;
 
                 // The profile now exists and explicitly starts unlocked. Mark this UID as
                 // handled before releasing the observer, then open the profile directly.
@@ -1896,12 +1898,21 @@
                 // If Auth succeeded but profile setup failed, don't leave a half-created
                 // session that the lock guard would mislabel as a blocked account.
                 if (auth.currentUser) {
-                    try { await signOut(auth); } catch (signOutError) {
-                        console.warn('Не удалось завершить незавершённую регистрацию:', signOutError);
+                    if (!registrationProfileCreated) {
+                        try { await deleteUser(auth.currentUser); } catch (deleteError) {
+                            console.warn('Не удалось удалить незавершённую учётную запись Firebase Auth:', deleteError);
+                            try { await signOut(auth); } catch {}
+                        }
+                    } else {
+                        try { await signOut(auth); } catch (signOutError) {
+                            console.warn('Не удалось завершить сессию после ошибки регистрации:', signOutError);
+                        }
                     }
                 }
                 console.error('Ошибка регистрации:', error);
-                let msg = 'Ошибка регистрации';
+                let msg = error?.code === 'permission-denied'
+                    ? 'Firebase Rules запретили создать профиль. Аккаунт не был зарегистрирован; проверьте разрешение create для users/{uid} и global_ids/{globalId}.'
+                    : (error?.message || 'Ошибка регистрации');
                 if (error.code === 'auth/email-already-in-use') msg = 'Email уже используется';
                 else if (error.code === 'auth/invalid-email') msg = 'Некорректный email';
                 else if (error.code === 'auth/weak-password') msg = 'Слабый пароль';
