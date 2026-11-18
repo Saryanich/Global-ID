@@ -666,11 +666,11 @@
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="font-size:48px; margin-bottom:10px;">🔒</div>
                     <h3 style="color:#ff6666; margin-bottom:8px;">Аккаунт заблокирован</h3>
-                    <p style="color:#ffaa00; font-size:14px;">Введите пароль для разблокировки</p>
+                    <p style="color:#ffaa00; font-size:14px;">Восстановите пароль по почте, затем подтвердите устройство</p>
                 </div>
                 <div class="form-group">
                     <label class="form-label">🔒 Пароль</label>
-                    <input type="password" id="unlockPassword" placeholder="Введите ваш пароль">
+                    <input type="password" id="unlockPassword" placeholder="Введите новый пароль после восстановления" autocomplete="current-password">
                 </div>
                 <div class="danger-box">
                     <strong>🚨 ЭКСТРЕННАЯ БЛОКИРОВКА АКТИВНА</strong><br>
@@ -2547,6 +2547,13 @@
             if (codeWatcher) { codeWatcher(); codeWatcher = null; }
             sessionStorage.removeItem('itglobal_pending_uid');
             sessionStorage.removeItem('itglobal_pending_email');
+            sessionStorage.removeItem('itglobal_pending_unlock');
+            pendingUnlockAfter2FA = false;
+            unlockHandledUid = null;
+            pendingMfaResolver = null;
+            pendingMfaHint = null;
+            pendingMfaPurpose = 'login';
+            firebaseTotpHandledUid = null;
             pendingUser = null;
             if (currentUser) {
                 await updateDoc(doc(db, "users", currentUser.uid), {
@@ -2744,6 +2751,10 @@
                 currentUserData = null;
                 pendingUser = null;
                 registrationHandledUid = null;
+                unlockHandledUid = null;
+                unlockInProgress = false;
+                pendingUnlockAfter2FA = false;
+                sessionStorage.removeItem('itglobal_pending_unlock');
                 firebaseTotpHandledUid = null;
                 pendingMfaResolver = null;
                 pendingMfaHint = null;
@@ -2784,6 +2795,8 @@
             }
             if (locked) {
                 pendingUser = null;
+                pendingUnlockAfter2FA = false;
+                sessionStorage.removeItem('itglobal_pending_unlock');
                 await signOut(auth);
                 pendingEmail = user.email || sessionStorage.getItem('itglobal_pending_email');
                 showScreen('unlockMode');
