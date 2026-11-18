@@ -868,7 +868,7 @@
         // Центральный вход: после успешной авторизации возвращаем пользователя
         // только в заранее разрешённые сервисы IT Global на том же origin.
         const AUTH_RETURN_KEY = 'itglobal_auth_return_v1';
-        const allowedServiceRoots = ['/Iceberg/', '/globit_arcade/', '/for_developers/', '/GloBank/', '/promo/', '/IT-Global/'];
+        const allowedServiceRoots = ['/Iceberg/', '/globit_arcade/', '/for_developers/', '/GloBank/', '/promo/', '/IT-Global/', '/GDZ_Marat/'];
         function safeServiceReturn(value) {
             try {
                 const target = new URL(value, window.location.href);
