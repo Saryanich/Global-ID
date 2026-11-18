@@ -864,6 +864,31 @@
         const auth = getAuth();
         const db = getFirestore();
 
+        // Центральный вход: после успешной авторизации возвращаем пользователя
+        // только в заранее разрешённые сервисы IT Global на том же origin.
+        const AUTH_RETURN_KEY = 'itglobal_auth_return_v1';
+        const allowedServiceRoots = ['/Iceberg/', '/globit_arcade/', '/for_developers/', '/GloBank/'];
+        function safeServiceReturn(value) {
+            try {
+                const target = new URL(value, window.location.href);
+                if (target.origin !== window.location.origin) return null;
+                if (!allowedServiceRoots.some(root => target.pathname.startsWith(root))) return null;
+                return target.href;
+            } catch { return null; }
+        }
+        const requestedServiceReturn = safeServiceReturn(new URLSearchParams(window.location.search).get('continue') || '');
+        if (requestedServiceReturn) {
+            try { sessionStorage.setItem(AUTH_RETURN_KEY, requestedServiceReturn); } catch {}
+        }
+        function returnToRequestedService() {
+            let target = requestedServiceReturn;
+            try { target = target || safeServiceReturn(sessionStorage.getItem(AUTH_RETURN_KEY) || ''); } catch {}
+            if (!target) return false;
+            try { sessionStorage.removeItem(AUTH_RETURN_KEY); } catch {}
+            window.location.replace(target);
+            return true;
+        }
+
         const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
             console.error("Не удалось включить постоянную авторизацию:", error);
         });
@@ -1852,6 +1877,7 @@
             document.getElementById('profilePanel').style.display = 'block';
             await loadProfile(user);
             startUserStatusListener(user.uid);
+            if (returnToRequestedService()) return;
         }
 
         function setRegistrationProgress(percent, message) {
