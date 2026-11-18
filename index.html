@@ -944,6 +944,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
+        auth.languageCode = 'ru';
         const db = getFirestore();
 
         // Центральный вход: после успешной авторизации возвращаем пользователя
@@ -1979,9 +1980,11 @@
                 showMessage('profileMessage', 'Google Authenticator отключён. Для новых устройств доступно подтверждение из активной сессии Global ID.', false);
             } catch (error) {
                 console.error('Ошибка отключения TOTP:', error);
-                showMessage('profileMessage', error.code === 'auth/user-token-expired'
-                    ? 'Срок текущей авторизации истёк. Войдите заново через Google Authenticator и повторите отключение.'
-                    : 'Не удалось отключить Authenticator. Попробуйте после повторного входа.', true);
+                showMessage('profileMessage',
+                    error.code === 'auth/user-token-expired' || error.code === 'auth/requires-recent-login'
+                        ? 'Для отключения Authenticator требуется свежая авторизация. Выйдите и войдите заново, затем повторите действие.'
+                        : 'Не удалось отключить Authenticator. Проверьте подключение и попробуйте позже.',
+                    true);
             }
         };
 
