@@ -456,6 +456,20 @@
         }
 
         .hidden { display: none !important; }
+        .registration-stage { text-align:center; padding:22px 10px 12px; }
+        .registration-orbit { width:116px; height:116px; margin:0 auto 22px; position:relative; display:grid; place-items:center; }
+        .registration-orbit::before,.registration-orbit::after { content:""; position:absolute; inset:0; border:2px solid rgba(0,255,102,.35); border-radius:50%; animation:regPulse 2s ease-out infinite; }
+        .registration-orbit::after { animation-delay:1s; }
+        .registration-orbit img { width:76px; height:76px; object-fit:contain; border-radius:22px; box-shadow:0 0 28px rgba(0,255,102,.35); animation:regFloat 2.4s ease-in-out infinite; }
+        .registration-progress { height:8px; overflow:hidden; background:rgba(0,255,102,.13); border-radius:20px; margin:22px 4px 12px; }
+        .registration-progress span { display:block; height:100%; width:8%; border-radius:20px; background:linear-gradient(90deg,#00b84f,#8cffb3); transition:width .55s ease; box-shadow:0 0 16px rgba(0,255,102,.65); }
+        .registration-step { color:#9affbd; font-size:14px; min-height:22px; }
+        .registration-dots::after { content:""; animation:regDots 1.4s steps(4,end) infinite; }
+        .verify-email-icon { font-size:58px; margin:12px 0; filter:drop-shadow(0 0 16px rgba(0,255,102,.35)); animation:regFloat 2.4s ease-in-out infinite; }
+        @keyframes regPulse { 0%{transform:scale(.72);opacity:.8} 100%{transform:scale(1.32);opacity:0} }
+        @keyframes regFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+        @keyframes regDots { 0%{content:""} 25%{content:"."} 50%{content:".."} 75%,100%{content:"..."} }
+        @media(prefers-reduced-motion:reduce){.registration-orbit::before,.registration-orbit::after,.registration-orbit img,.verify-email-icon,.registration-dots::after{animation:none!important}}
     </style>
 </head>
 <body>
@@ -502,6 +516,31 @@
                 </div>
                 <button class="btn btn-primary" onclick="register()">✅ Зарегистрироваться</button>
                 <button class="btn btn-secondary" onclick="showLogin()" style="margin-top: 12px;">← Назад ко входу</button>
+            </div>
+
+            <div id="registrationProgressMode" style="display:none;">
+                <div class="registration-stage">
+                    <div class="registration-orbit"><img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="Global ID"></div>
+                    <h2 style="color:#00ff66;margin-bottom:8px;">Создаём ваш Global ID</h2>
+                    <div class="subtitle">Настраиваем безопасный доступ к экосистеме IT Global</div>
+                    <div class="registration-progress"><span id="registrationProgressBar"></span></div>
+                    <div id="registrationStepText" class="registration-step registration-dots">Подготавливаем регистрацию</div>
+                    <div style="color:#8abf9d;font-size:12px;margin-top:16px;">Пожалуйста, не закрывайте эту страницу</div>
+                </div>
+            </div>
+
+            <div id="emailVerificationMode" style="display:none;">
+                <div class="registration-stage">
+                    <div class="verify-email-icon">✉️</div>
+                    <h2 style="color:#00ff66;margin-bottom:8px;">Подтвердите почту</h2>
+                    <p style="color:#c8ffd9;font-size:14px;line-height:1.6;">Мы отправили письмо со ссылкой подтверждения на:</p>
+                    <p id="verificationEmail" style="color:#fff;font-weight:700;overflow-wrap:anywhere;margin:12px 0 18px;"></p>
+                    <div class="danger-box" style="border-color:#00cc66;color:#caffd8;text-align:left;">Пока почта не подтверждена, вход в Global ID и Iceberg закрыт. Проверьте также папку «Спам».</div>
+                    <button class="btn btn-primary" onclick="checkEmailVerification()">✅ Я подтвердил почту</button>
+                    <button class="btn btn-secondary" onclick="resendEmailVerification()" style="margin-top:10px;">📩 Отправить письмо ещё раз</button>
+                    <button class="btn btn-secondary" onclick="cancelEmailVerification()" style="margin-top:10px;">← Вернуться ко входу</button>
+                    <div id="emailVerificationMessage" class="message"></div>
+                </div>
             </div>
 
             <!-- 2FA при входе (НОВОЕ УСТРОЙСТВО) -->
@@ -818,7 +857,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification, reload, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
@@ -1368,7 +1407,7 @@
 
         // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
         function showScreen(screenId) {
-            ['loginMode', 'registerMode', 'twoFactorLoginMode', 'securityQuestionsMode', 'unlockMode'].forEach(id => {
+            ['loginMode', 'registerMode', 'registrationProgressMode', 'emailVerificationMode', 'twoFactorLoginMode', 'securityQuestionsMode', 'unlockMode'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -1737,6 +1776,12 @@
                 const userCred = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCred.user;
 
+                if (!user.emailVerified) {
+                    document.getElementById('verificationEmail').textContent = user.email || email;
+                    showScreen('emailVerificationMode');
+                    return;
+                }
+
                 let locked;
                 try {
                     locked = await isAccountLocked(user.uid);
@@ -1809,6 +1854,56 @@
             startUserStatusListener(user.uid);
         }
 
+        function setRegistrationProgress(percent, message) {
+            const bar = document.getElementById('registrationProgressBar');
+            const label = document.getElementById('registrationStepText');
+            if (bar) bar.style.width = percent + '%';
+            if (label) label.textContent = message;
+        }
+
+        window.resendEmailVerification = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                showMessage('emailVerificationMessage', 'Сначала войдите в аккаунт, чтобы запросить новое письмо.', true);
+                return;
+            }
+            try {
+                await sendEmailVerification(user);
+                showMessage('emailVerificationMessage', 'Письмо отправлено повторно. Проверьте входящие и папку «Спам».', false);
+            } catch (error) {
+                console.error('Ошибка повторной отправки письма:', error);
+                showMessage('emailVerificationMessage', error.code === 'auth/too-many-requests'
+                    ? 'Слишком много запросов. Подождите немного.'
+                    : 'Не удалось отправить письмо. Попробуйте позже.', true);
+            }
+        };
+
+        window.checkEmailVerification = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                showMessage('emailVerificationMessage', 'Войдите в аккаунт после подтверждения почты.', true);
+                return;
+            }
+            try {
+                await reload(user);
+                if (!auth.currentUser?.emailVerified) {
+                    showMessage('emailVerificationMessage', 'Пока подтверждение не найдено. Перейдите по ссылке в письме и попробуйте снова.', true);
+                    return;
+                }
+                await signOut(auth);
+                showScreen('loginMode');
+                showMessage('authMessage', 'Почта подтверждена! Теперь войдите в Global ID.', false);
+            } catch (error) {
+                console.error('Ошибка проверки почты:', error);
+                showMessage('emailVerificationMessage', 'Не удалось проверить подтверждение. Проверьте подключение и повторите попытку.', true);
+            }
+        };
+
+        window.cancelEmailVerification = async () => {
+            try { if (auth.currentUser) await signOut(auth); } catch {}
+            showScreen('loginMode');
+        };
+
         // ==================== РЕГИСТРАЦИЯ ====================
         window.register = async () => {
             const email = document.getElementById('regEmail').value.trim();
@@ -1832,9 +1927,12 @@
 
             let registrationProfileCreated = false;
             try {
+                showScreen('registrationProgressMode');
+                setRegistrationProgress(12, 'Проверяем данные');
                 await authPersistenceReady;
                 registrationInProgress = true;
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                setRegistrationProgress(35, 'Создаём защищённый профиль');
                 const registrationDevice = {
                     deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
@@ -1846,6 +1944,7 @@
                     lastUsed: new Date()
                 };
 
+                setRegistrationProgress(58, 'Регистрируем ваш Global ID');
                 // Create users/{uid} and global_ids/{GlobalID} atomically.
                 // A failed profile write can no longer leave a dangling Global ID mapping.
                 const userRef = doc(db, "users", userCred.user.uid);
@@ -1886,13 +1985,16 @@
                 }
                 if (!globalId) throw new Error('Не удалось создать свободный Global ID. Повторите регистрацию.');
                 registrationProfileCreated = true;
+                setRegistrationProgress(82, 'Подготавливаем подтверждение почты');
+                await sendEmailVerification(userCred.user);
+                setRegistrationProgress(100, 'Готово! Остался один шаг');
 
                 // The profile now exists and explicitly starts unlocked. Mark this UID as
                 // handled before releasing the observer, then open the profile directly.
                 registrationHandledUid = userCred.user.uid;
                 registrationInProgress = false;
-                await enterProfile(userCred.user);
-                showMessage('profileMessage', '✅ Global ID успешно создан!', false);
+                document.getElementById('verificationEmail').textContent = email;
+                showScreen('emailVerificationMode');
             } catch (error) {
                 registrationInProgress = false;
                 // If Auth succeeded but profile setup failed, don't leave a half-created
@@ -2217,6 +2319,12 @@
             // createUserWithEmailAndPassword signs in immediately. Do not interpret
             // the brief interval before registration writes users/{uid} as a locked account.
             if (registrationInProgress || registrationHandledUid === user.uid) return;
+
+            if (!user.emailVerified) {
+                document.getElementById('verificationEmail').textContent = user.email || '';
+                showScreen('emailVerificationMode');
+                return;
+            }
 
             await getDeviceInfo();
 
