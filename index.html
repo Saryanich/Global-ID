@@ -644,6 +644,22 @@
                 <div id="twoFactorMessage" class="message"></div>
             </div>
 
+            <div id="totpLoginMode" style="display:none;">
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="Global ID" class="logo-img logo-img-small">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <div style="font-size:48px;margin-bottom:10px;">🔐</div>
+                    <h3 style="color:#00ff66;margin-bottom:8px;">Google Authenticator</h3>
+                    <p style="color:#b8dfcc;font-size:14px;line-height:1.55;">Введите шестизначный код из приложения-аутентификатора.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Одноразовый код</label>
+                    <input type="text" id="totpLoginCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="text-align:center;font-size:28px;letter-spacing:8px;font-weight:800;">
+                </div>
+                <button class="btn btn-primary" onclick="confirmTotpLogin()">✅ Подтвердить код</button>
+                <button class="btn btn-secondary" onclick="cancelTotpLogin()" style="margin-top:10px;">← Вернуться ко входу</button>
+                <div id="totpLoginMessage" class="message"></div>
+            </div>
+
             <!-- Экран разблокировки -->
             <div id="unlockMode" style="display:none;">
                 <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small" style="border-color: #ff4444;">
@@ -776,6 +792,16 @@
             </div>
 
             <div class="card">
+                <h2 class="section-title">🛡️ Google Authenticator</h2>
+                <p id="totpFactorStatus" style="color:#b8dfcc;font-size:13px;line-height:1.55;margin-bottom:15px;">
+                    Проверяем состояние второго фактора…
+                </p>
+                <button id="totpEnableButton" class="btn btn-secondary" onclick="openTotpEnrollment()">📲 Подключить Google Authenticator</button>
+                <button id="totpDisableButton" class="btn btn-warning" onclick="disableGoogleAuthenticator()" style="display:none;">Отключить Google Authenticator</button>
+                <div class="info-text">При включённом TOTP Firebase сам проверяет код при входе. Чтобы пользоваться кодом из активной сессии Global ID вместо Authenticator, отключите TOTP здесь.</div>
+            </div>
+
+            <div class="card">
                 <h2 class="section-title">👤 Личные данные</h2>
                 <div class="form-group">
                     <label class="form-label">Основная почта</label>
@@ -874,6 +900,34 @@
         </div>
     </div>
 
+    <div id="totpEnrollModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Подключение Google Authenticator</h3>
+            <div id="totpPasswordStep">
+                <p>Для защиты настройки подтвердите пароль Global ID. Сам секрет TOTP будет показан только один раз на этом экране.</p>
+                <div class="form-group">
+                    <label class="form-label">Пароль Global ID</label>
+                    <input type="password" id="totpReauthPassword" autocomplete="current-password" placeholder="Введите пароль">
+                </div>
+                <button class="btn btn-primary" onclick="prepareTotpEnrollment()">Продолжить</button>
+                <button class="btn btn-secondary" onclick="closeTotpModal()" style="margin-top:10px;">Отмена</button>
+            </div>
+            <div id="totpQrStep" style="display:none;">
+                <p>Отсканируйте QR-код приложением Google Authenticator, затем введите код из приложения для завершения подключения.</p>
+                <div id="totpQrCode" class="qr-container"></div>
+                <p style="margin-bottom:6px;">Резервный ключ для ручного добавления:</p>
+                <div id="totpManualSecret" class="global-id-value" style="font-size:15px;letter-spacing:1px;"></div>
+                <div class="form-group">
+                    <label class="form-label">Код из приложения</label>
+                    <input type="text" id="totpEnrollCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="text-align:center;font-size:26px;letter-spacing:8px;font-weight:800;">
+                </div>
+                <button class="btn btn-primary" onclick="confirmTotpEnrollment()">✅ Завершить подключение</button>
+                <button class="btn btn-secondary" onclick="closeTotpModal()" style="margin-top:10px;">Отмена</button>
+            </div>
+            <div id="totpModalMessage" class="message"></div>
+        </div>
+    </div>
+
     <script type="module">
         const firebaseConfig = {
             apiKey: "AIzaSyA6GGJxAiao77U7_9mBUEjftmS_FnSWbIw",
@@ -885,7 +939,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification, sendPasswordResetEmail, reload, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification, sendPasswordResetEmail, reload, onAuthStateChanged, browserLocalPersistence, setPersistence, EmailAuthProvider, reauthenticateWithCredential, multiFactor, TotpMultiFactorGenerator, getMultiFactorResolver } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
@@ -941,6 +995,12 @@
         let unlockInProgress = false;
         let unlockHandledUid = null;
         let pendingUnlockAfter2FA = false;
+        let pendingTotpSecret = null;
+        let pendingMfaResolver = null;
+        let pendingMfaHint = null;
+        let pendingMfaPurpose = 'login';
+        let firebaseTotpSignInInProgress = false;
+        let firebaseTotpHandledUid = null;
         const processed2FACodes = new Set();
 
         // ==================== SHA-256 ====================
@@ -1512,7 +1572,7 @@
 
         // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
         function showScreen(screenId) {
-            ['loginMode', 'registerMode', 'registrationProgressMode', 'emailVerificationMode', 'twoFactorLoginMode', 'unlockMode'].forEach(id => {
+            ['loginMode', 'registerMode', 'registrationProgressMode', 'emailVerificationMode', 'twoFactorLoginMode', 'totpLoginMode', 'unlockMode'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -1779,6 +1839,295 @@
             showScreen('loginMode');
         };
 
+        // ==================== GOOGLE AUTHENTICATOR / TOTP ====================
+        function renderTotpFactorStatus(user = currentUser) {
+            const status = document.getElementById('totpFactorStatus');
+            const enableButton = document.getElementById('totpEnableButton');
+            const disableButton = document.getElementById('totpDisableButton');
+            if (!status || !enableButton || !disableButton) return;
+
+            let enrolled = [];
+            try {
+                enrolled = user ? multiFactor(user).enrolledFactors : [];
+            } catch (error) {
+                console.warn('Не удалось прочитать факторы MFA:', error);
+            }
+            const factor = enrolled.find(item => item.factorId === TotpMultiFactorGenerator.FACTOR_ID);
+            if (factor) {
+                status.textContent = 'Google Authenticator подключён. При каждом новом входе Firebase будет запрашивать одноразовый код из приложения.';
+                enableButton.style.display = 'none';
+                disableButton.style.display = 'block';
+            } else {
+                status.textContent = 'Google Authenticator не подключён. Для новых устройств пока доступно подтверждение кодом из активной сессии Global ID.';
+                enableButton.style.display = 'block';
+                disableButton.style.display = 'none';
+            }
+        }
+
+        window.openTotpEnrollment = () => {
+            if (!currentUser) {
+                showMessage('profileMessage', 'Сначала войдите в Global ID.', true);
+                return;
+            }
+            const hasTotp = multiFactor(currentUser).enrolledFactors.some(
+                item => item.factorId === TotpMultiFactorGenerator.FACTOR_ID
+            );
+            if (hasTotp) {
+                renderTotpFactorStatus(currentUser);
+                return;
+            }
+            pendingTotpSecret = null;
+            document.getElementById('totpPasswordStep').style.display = 'block';
+            document.getElementById('totpQrStep').style.display = 'none';
+            document.getElementById('totpReauthPassword').value = '';
+            document.getElementById('totpEnrollCode').value = '';
+            document.getElementById('totpQrCode').innerHTML = '';
+            document.getElementById('totpManualSecret').textContent = '';
+            document.getElementById('totpEnrollModal').classList.add('active');
+            setTimeout(() => document.getElementById('totpReauthPassword')?.focus(), 100);
+        };
+
+        window.prepareTotpEnrollment = async () => {
+            const password = document.getElementById('totpReauthPassword').value;
+            if (!currentUser?.email || !password) {
+                showMessage('totpModalMessage', 'Введите пароль текущего аккаунта.', true);
+                return;
+            }
+            try {
+                const credential = EmailAuthProvider.credential(currentUser.email, password);
+                await reauthenticateWithCredential(currentUser, credential);
+                const session = await multiFactor(currentUser).getSession();
+                pendingTotpSecret = await TotpMultiFactorGenerator.generateSecret(session);
+
+                const qrContainer = document.getElementById('totpQrCode');
+                qrContainer.innerHTML = '';
+                const qrUrl = pendingTotpSecret.generateQrCodeUrl(currentUser.email, 'Global ID');
+                new QRCode(qrContainer, {
+                    text: qrUrl,
+                    width: 190,
+                    height: 190,
+                    colorDark: '#003b2b',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+
+                document.getElementById('totpManualSecret').textContent = pendingTotpSecret.secretKey;
+                document.getElementById('totpPasswordStep').style.display = 'none';
+                document.getElementById('totpQrStep').style.display = 'block';
+                showMessage('totpModalMessage', 'Секрет создан. Добавьте его в приложение и подтвердите подключение шестизначным кодом.', false);
+            } catch (error) {
+                console.error('Ошибка подготовки Google Authenticator:', error);
+                const unavailable = error.code === 'auth/operation-not-allowed' ||
+                    error.code === 'auth/admin-restricted-operation' ||
+                    error.code === 'auth/unsupported-first-factor';
+                showMessage('totpModalMessage', unavailable
+                    ? 'TOTP пока не включён в проекте. Сначала подключите Firebase Authentication with Identity Platform и включите TOTP MFA в настройках Firebase.'
+                    : error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential'
+                        ? 'Неверный пароль Global ID.'
+                        : 'Не удалось подготовить Authenticator. Проверьте настройки Firebase и попробуйте снова.', true);
+            }
+        };
+
+        window.confirmTotpEnrollment = async () => {
+            const code = String(document.getElementById('totpEnrollCode').value || '').replace(/\D/g, '');
+            if (!pendingTotpSecret || code.length !== 6) {
+                showMessage('totpModalMessage', 'Введите шестизначный код из приложения.', true);
+                return;
+            }
+            try {
+                const assertion = TotpMultiFactorGenerator.assertionForEnrollment(pendingTotpSecret, code);
+                await multiFactor(currentUser).enroll(assertion, 'Google Authenticator');
+                pendingTotpSecret = null;
+                window.closeTotpModal();
+                renderTotpFactorStatus(currentUser);
+                showMessage('profileMessage', 'Google Authenticator успешно подключён. Теперь Firebase будет проверять его код при входе.', false);
+            } catch (error) {
+                console.error('Ошибка подтверждения TOTP:', error);
+                showMessage('totpModalMessage', error.code === 'auth/invalid-verification-code'
+                    ? 'Код неверный или уже сменился. Введите актуальный код из приложения.'
+                    : 'Не удалось завершить подключение. Проверьте код и настройки Firebase.', true);
+            }
+        };
+
+        window.closeTotpModal = () => {
+            pendingTotpSecret = null;
+            document.getElementById('totpEnrollModal')?.classList.remove('active');
+            document.getElementById('totpReauthPassword').value = '';
+            document.getElementById('totpEnrollCode').value = '';
+            document.getElementById('totpQrCode').innerHTML = '';
+            document.getElementById('totpManualSecret').textContent = '';
+        };
+
+        window.disableGoogleAuthenticator = async () => {
+            if (!currentUser) return;
+            const factor = multiFactor(currentUser).enrolledFactors.find(
+                item => item.factorId === TotpMultiFactorGenerator.FACTOR_ID
+            );
+            if (!factor) {
+                renderTotpFactorStatus(currentUser);
+                return;
+            }
+            const confirmed = await showConfirm(
+                'Отключить Google Authenticator',
+                'Firebase перестанет запрашивать TOTP. Для новых устройств снова будет использоваться код из активной сессии Global ID.',
+                'Отключить'
+            );
+            if (!confirmed) return;
+            try {
+                await multiFactor(currentUser).unenroll(factor.uid);
+                renderTotpFactorStatus(currentUser);
+                showMessage('profileMessage', 'Google Authenticator отключён. Для новых устройств доступно подтверждение из активной сессии Global ID.', false);
+            } catch (error) {
+                console.error('Ошибка отключения TOTP:', error);
+                showMessage('profileMessage', error.code === 'auth/user-token-expired'
+                    ? 'Срок текущей авторизации истёк. Войдите заново через Google Authenticator и повторите отключение.'
+                    : 'Не удалось отключить Authenticator. Попробуйте после повторного входа.', true);
+            }
+        };
+
+        function showTotpChallenge(error, purpose = 'login') {
+            try {
+                const resolver = getMultiFactorResolver(auth, error);
+                const hint = resolver.hints.find(item => item.factorId === TotpMultiFactorGenerator.FACTOR_ID);
+                if (!hint) {
+                    showMessage(purpose === 'unlock' ? 'unlockMessage' : 'authMessage',
+                        'Firebase запросил дополнительный фактор, который эта версия Global ID пока не поддерживает.', true);
+                    return false;
+                }
+                pendingMfaResolver = resolver;
+                pendingMfaHint = hint;
+                pendingMfaPurpose = purpose;
+                document.getElementById('totpLoginCode').value = '';
+                showScreen('totpLoginMode');
+                showMessage('totpLoginMessage', purpose === 'unlock'
+                    ? 'Подтвердите Google Authenticator, чтобы завершить восстановление доступа.'
+                    : 'Введите код Google Authenticator для подтверждения входа.', false);
+                setTimeout(() => document.getElementById('totpLoginCode')?.focus(), 100);
+                return true;
+            } catch (resolverError) {
+                console.error('Не удалось открыть MFA challenge:', resolverError);
+                showMessage(purpose === 'unlock' ? 'unlockMessage' : 'authMessage',
+                    'Не удалось открыть проверку Google Authenticator.', true);
+                return false;
+            }
+        }
+
+        window.confirmTotpLogin = async () => {
+            const code = String(document.getElementById('totpLoginCode').value || '').replace(/\D/g, '');
+            if (code.length !== 6) {
+                showMessage('totpLoginMessage', 'Введите шестизначный код из Google Authenticator.', true);
+                return;
+            }
+            if (!pendingMfaResolver || !pendingMfaHint) {
+                showMessage('totpLoginMessage', 'Сессия проверки потеряна. Начните вход заново.', true);
+                return;
+            }
+
+            const purpose = pendingMfaPurpose;
+            firebaseTotpSignInInProgress = true;
+            try {
+                const assertion = TotpMultiFactorGenerator.assertionForSignIn(pendingMfaHint.uid, code);
+                const userCredential = await pendingMfaResolver.resolveSignIn(assertion);
+                const user = userCredential.user;
+                pendingMfaResolver = null;
+                pendingMfaHint = null;
+                pendingMfaPurpose = 'login';
+                firebaseTotpHandledUid = user.uid;
+
+                await getDeviceInfo();
+                if (!user.emailVerified) {
+                    document.getElementById('verificationEmail').textContent = user.email || '';
+                    showScreen('emailVerificationMode');
+                    return;
+                }
+
+                const profileSnap = await getDoc(doc(db, 'users', user.uid));
+                if (!profileSnap.exists()) throw new Error('Профиль Global ID не найден.');
+                const profileData = profileSnap.data();
+
+                if (purpose === 'unlock') {
+                    await addTrustedDevice(user.uid);
+                    await updateDoc(doc(db, 'users', user.uid), {
+                        accountLocked: false,
+                        lockedAt: null,
+                        lockedBy: null,
+                        twoFactorCodeHash: null,
+                        twoFactorCodeEncrypted: null,
+                        twoFactorCodePlain: null,
+                        twoFactorCodeExpires: null,
+                        pendingDeviceInfo: null,
+                        online: true,
+                        lastSeen: serverTimestamp(),
+                        currentIP: currentIP,
+                        currentDevice: deviceFingerprint
+                    });
+                    pendingEmail = null;
+                    pendingUser = null;
+                    await enterProfile(user);
+                    showMessage('profileMessage', 'Аккаунт разблокирован после подтверждения Google Authenticator.', false);
+                } else {
+                    if (profileData.accountLocked === true) {
+                        pendingEmail = user.email || null;
+                        firebaseTotpHandledUid = null;
+                        await signOut(auth);
+                        showScreen('unlockMode');
+                        showMessage('unlockMessage', 'Аккаунт заблокирован. Восстановите пароль по почте, затем подтвердите доступ.', true);
+                        return;
+                    }
+                    if (profileData.globalIdAccess === false) {
+                        firebaseTotpHandledUid = null;
+                        await signOut(auth);
+                        showScreen('loginMode');
+                        showMessage('authMessage', 'Доступ к Global ID для этого аккаунта отключён.', true);
+                        return;
+                    }
+
+                    await addTrustedDevice(user.uid);
+                    await updateDoc(doc(db, 'users', user.uid), {
+                        globalIdLastLogin: serverTimestamp(),
+                        online: true,
+                        lastSeen: serverTimestamp(),
+                        currentIP: currentIP,
+                        currentDevice: deviceFingerprint,
+                        twoFactorCodeHash: null,
+                        twoFactorCodeEncrypted: null,
+                        twoFactorCodePlain: null,
+                        twoFactorCodeExpires: null,
+                        pendingDeviceInfo: null
+                    });
+                    pendingUser = null;
+                    await enterProfile(user);
+                    showMessage('profileMessage', 'Вход подтверждён Google Authenticator.', false);
+                }
+            } catch (error) {
+                console.error('Ошибка проверки Google Authenticator:', error);
+                const invalidCode = error.code === 'auth/invalid-verification-code' ||
+                    error.code === 'auth/invalid-multi-factor-session' ||
+                    error.code === 'auth/code-expired';
+                if (invalidCode) {
+                    showMessage('totpLoginMessage', 'Код неверный или истёк. Проверьте время на устройстве и введите новый код.', true);
+                } else {
+                    firebaseTotpHandledUid = null;
+                    try { if (auth.currentUser) await signOut(auth); } catch {}
+                    pendingMfaResolver = null;
+                    pendingMfaHint = null;
+                    showScreen('loginMode');
+                    showMessage('authMessage', 'Не удалось завершить вход через Google Authenticator. Начните вход заново.', true);
+                }
+            } finally {
+                firebaseTotpSignInInProgress = false;
+            }
+        };
+
+        window.cancelTotpLogin = async () => {
+            pendingMfaResolver = null;
+            pendingMfaHint = null;
+            pendingMfaPurpose = 'login';
+            firebaseTotpHandledUid = null;
+            try { await signOut(auth); } catch {}
+            showScreen('loginMode');
+        };
+
         // ==================== ВХОД ====================
         window.login = async () => {
             const rawIdentifier = document.getElementById('loginIdentifier').value;
@@ -1886,6 +2235,10 @@
                     document.getElementById('code1').focus();
                 }
             } catch (error) {
+                if (error.code === 'auth/multi-factor-auth-required') {
+                    showTotpChallenge(error, 'login');
+                    return;
+                }
                 console.error('Ошибка входа:', error);
                 let msg = 'Неверный email/Global ID или пароль';
                 if (error.code === 'auth/wrong-password') msg = 'Неверный пароль';
@@ -2163,6 +2516,10 @@
                     showMessage('twoFactorMessage', 'Пароль подтверждён. Для завершения разблокировки введите код из уже активного Global ID.', false);
                 }
             } catch (error) {
+                if (error.code === 'auth/multi-factor-auth-required') {
+                    showTotpChallenge(error, 'unlock');
+                    return;
+                }
                 console.error('Ошибка разблокировки:', error);
                 pendingUnlockAfter2FA = false;
                 unlockHandledUid = null;
@@ -2371,6 +2728,7 @@
             }
 
             renderDevicesList(currentUserData.trustedDevices || []);
+            renderTotpFactorStatus(user);
             watchFor2FACodes(user.uid);
         }
 
@@ -2386,6 +2744,10 @@
                 currentUserData = null;
                 pendingUser = null;
                 registrationHandledUid = null;
+                firebaseTotpHandledUid = null;
+                pendingMfaResolver = null;
+                pendingMfaHint = null;
+                pendingMfaPurpose = 'login';
                 sessionStorage.removeItem('itglobal_pending_uid');
                 sessionStorage.removeItem('itglobal_pending_email');
                 showScreen('loginMode');
@@ -2394,7 +2756,9 @@
                 return;
             }
 
-            if (unlockInProgress || (unlockHandledUid === user.uid && pendingUnlockAfter2FA)) return;
+            if (unlockInProgress || firebaseTotpSignInInProgress ||
+                (unlockHandledUid === user.uid && pendingUnlockAfter2FA) ||
+                firebaseTotpHandledUid === user.uid) return;
 
             // createUserWithEmailAndPassword signs in immediately. Do not interpret
             // the brief interval before registration writes users/{uid} as a locked account.
