@@ -1083,15 +1083,10 @@
         }
 
         async function isAccountLocked(uid) {
-            try {
-                const userDoc = await getDoc(doc(db, "users", uid));
-                if (!userDoc.exists()) return true;
-                return userDoc.data()?.accountLocked === true;
-            } catch (error) {
-                // Fail closed: never treat a Firestore read failure as permission to enter.
-                console.error('Не удалось проверить блокировку аккаунта:', error);
-                return true;
-            }
+            const userDoc = await getDoc(doc(db, "users", uid));
+            // Missing profile means incomplete synchronization, not an emergency lock.
+            if (!userDoc.exists()) return false;
+            return userDoc.data()?.accountLocked === true;
         }
 
         // ==================== QR ====================
@@ -1742,14 +1737,28 @@
                 const userCred = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCred.user;
 
-                if (await isAccountLocked(user.uid)) {
+                let locked;
+                try {
+                    locked = await isAccountLocked(user.uid);
+                } catch (statusError) {
+                    console.error('Не удалось проверить статус аккаунта:', statusError);
+                    await signOut(auth);
+                    showMessage('authMessage', 'Не удалось проверить профиль в базе данных. Это не блокировка аккаунта. Повторите вход позже.', true);
+                    return;
+                }
+                if (locked) {
                     await signOut(auth);
                     showScreen('unlockMode');
                     return;
                 }
 
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
-                const userData = userDoc.exists() ? userDoc.data() : null;
+                if (!userDoc.exists()) {
+                    await signOut(auth);
+                    showMessage('authMessage', 'Профиль Global ID не найден. Аккаунт не заблокирован; требуется восстановить синхронизацию профиля.', true);
+                    return;
+                }
+                const userData = userDoc.data();
                 if (userData?.globalIdAccess === false) {
                     await signOut(auth);
                     showMessage('authMessage', 'Доступ к Global-ID для этого аккаунта отключён.', true);
@@ -1825,8 +1834,6 @@
                 await authPersistenceReady;
                 registrationInProgress = true;
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                const globalId = await reserveUniqueGlobalId(userCred.user.uid, email);
-
                 const registrationDevice = {
                     deviceToken: getSharedDeviceToken(),
                     fingerprint: deviceFingerprint,
@@ -1838,23 +1845,45 @@
                     lastUsed: new Date()
                 };
 
-                // 1. Основной документ в users
-                await setDoc(doc(db, "users", userCred.user.uid), {
-                    email: email,
-                    globalId: globalId,
-                    nickname: email.split('@')[0],
-                    createdAt: serverTimestamp(),
-                    contacts: [],
-                    groups: [],
-                    online: true,
-                    lastSeen: serverTimestamp(),
-                    globalIdAccess: true,
-                    icebergAccess: true,
-                    accountLocked: false,
-                    trustedDevices: [registrationDevice],
-                    currentIP: currentIP,
-                    currentDevice: deviceFingerprint
-                });
+                // Create users/{uid} and global_ids/{GlobalID} atomically.
+                // A failed profile write can no longer leave a dangling Global ID mapping.
+                const userRef = doc(db, "users", userCred.user.uid);
+                let globalId = null;
+                for (let attempt = 0; attempt < 30 && !globalId; attempt++) {
+                    const candidate = generateGlobalId();
+                    const mappingRef = doc(db, "global_ids", candidate);
+                    const created = await runTransaction(db, async (transaction) => {
+                        const mappingSnap = await transaction.get(mappingRef);
+                        if (mappingSnap.exists()) return false;
+                        const profileSnap = await transaction.get(userRef);
+                        if (profileSnap.exists()) throw new Error('Профиль этого аккаунта уже существует.');
+                        transaction.set(mappingRef, {
+                            uid: userCred.user.uid,
+                            email,
+                            createdAt: serverTimestamp()
+                        });
+                        transaction.set(userRef, {
+                            uid: userCred.user.uid,
+                            email,
+                            globalId: candidate,
+                            nickname: email.split('@')[0],
+                            createdAt: serverTimestamp(),
+                            contacts: [],
+                            groups: [],
+                            online: true,
+                            lastSeen: serverTimestamp(),
+                            globalIdAccess: true,
+                            icebergAccess: true,
+                            accountLocked: false,
+                            trustedDevices: [registrationDevice],
+                            currentIP,
+                            currentDevice: deviceFingerprint
+                        });
+                        return true;
+                    });
+                    if (created) globalId = candidate;
+                }
+                if (!globalId) throw new Error('Не удалось создать свободный Global ID. Повторите регистрацию.');
 
                 // The profile now exists and explicitly starts unlocked. Mark this UID as
                 // handled before releasing the observer, then open the profile directly.
@@ -2180,11 +2209,29 @@
 
             await getDeviceInfo();
 
-            if (await isAccountLocked(user.uid)) {
+            let locked;
+            try {
+                locked = await isAccountLocked(user.uid);
+            } catch (statusError) {
+                console.error('Не удалось проверить статус аккаунта:', statusError);
+                await signOut(auth);
+                showScreen('loginMode');
+                showMessage('authMessage', 'Не удалось проверить профиль в базе данных. Это не экстренная блокировка. Повторите вход позже.', true);
+                return;
+            }
+            if (locked) {
                 pendingUser = null;
                 await signOut(auth);
                 pendingEmail = user.email || sessionStorage.getItem('itglobal_pending_email');
                 showScreen('unlockMode');
+                return;
+            }
+
+            const profileCheck = await getDoc(doc(db, "users", user.uid));
+            if (!profileCheck.exists()) {
+                await signOut(auth);
+                showScreen('loginMode');
+                showMessage('authMessage', 'Профиль Global ID не найден. Аккаунт не заблокирован; требуется восстановить синхронизацию профиля.', true);
                 return;
             }
 
