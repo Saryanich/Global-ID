@@ -1818,6 +1818,7 @@
             sessionStorage.removeItem('itglobal_pending_unlock');
             pendingUser = null;
             pendingEmail = null;
+            localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
             try { await signOut(auth); } catch {}
             showScreen('loginMode');
         };
@@ -1825,6 +1826,7 @@
         // ==================== ПРОВЕРКА ВЛАДЕНИЯ ПОЧТОЙ ====================
         const EMAIL_PROOF_CHALLENGE_KEY = 'itglobal_email_proof_challenge_v2';
         const EMAIL_PROOF_MARKER_KEY = 'itglobal_email_proof_marker_v2';
+        const PENDING_UNLOCK_EMAIL_KEY = 'itglobal_pending_unlock_email_v2';
         const EMAIL_PROOF_VERSION = 1;
         const EMAIL_PROOF_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
         const EMAIL_UNLOCK_PROOF_MAX_AGE = 15 * 60 * 1000;
@@ -1977,6 +1979,7 @@
                 }
                 if (locked) {
                     pendingEmail = user.email || email;
+                    localStorage.setItem(PENDING_UNLOCK_EMAIL_KEY, pendingEmail);
                     await signOut(auth);
                     showScreen('unlockMode');
                     showMessage('unlockMessage', 'Аккаунт заблокирован. При необходимости восстановите пароль по ссылке из письма, затем подтвердите устройство.', true);
@@ -1999,6 +2002,7 @@
                     showMessage('authMessage', 'Доступ к Global-ID для этого аккаунта отключён.', true);
                     return;
                 }
+                localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
                     await updateDoc(doc(db, 'users', user.uid), {
@@ -2561,9 +2565,15 @@
                 sessionStorage.removeItem('itglobal_pending_unlock');
                 sessionStorage.removeItem('itglobal_pending_uid');
                 sessionStorage.removeItem('itglobal_pending_email');
-                showScreen('loginMode');
-                document.getElementById('loginIdentifier').value = '';
-                document.getElementById('loginPassword').value = '';
+                const savedUnlockEmail = localStorage.getItem(PENDING_UNLOCK_EMAIL_KEY);
+                if (savedUnlockEmail) {
+                    pendingEmail = savedUnlockEmail;
+                    showScreen('unlockMode');
+                } else {
+                    showScreen('loginMode');
+                    document.getElementById('loginIdentifier').value = '';
+                    document.getElementById('loginPassword').value = '';
+                }
                 return;
             }
 
@@ -2594,6 +2604,7 @@
             }
             if (locked) {
                 pendingUser = null;
+                localStorage.setItem(PENDING_UNLOCK_EMAIL_KEY, user.email || '');
                 pendingUnlockAfter2FA = false;
                 sessionStorage.removeItem('itglobal_pending_unlock');
                 await signOut(auth);
