@@ -18,7 +18,7 @@ function doPost(e) {
       : {};
 
     var expectedToken = PropertiesService.getScriptProperties()
-      .getProperty("ITGLOBAL_MAIL_TOKEN") || "";
+      .getProperty("ITGLOBAL_MAIL_WEBAPP_TOKEN") || "";
     var providedToken = String(payload.token || "");
 
     if (!constantTimeEquals(providedToken, expectedToken)) {
