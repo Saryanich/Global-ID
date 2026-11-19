@@ -2008,11 +2008,16 @@
         // ==================== ВХОД В ПРОФИЛЬ ====================
         async function enterProfile(user) {
             currentUser = user;
+
+            // A service callback has already completed authentication and device
+            // verification. Return immediately instead of rendering/loading the
+            // Global ID profile first; the destination service loads its own data.
+            if (returnToRequestedService()) return;
+
             document.getElementById('authForm').style.display = 'none';
             document.getElementById('profilePanel').style.display = 'block';
             await loadProfile(user);
             startUserStatusListener(user.uid);
-            if (returnToRequestedService()) return;
         }
 
         function setRegistrationProgress(percent, message) {
