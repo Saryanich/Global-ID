@@ -130,31 +130,56 @@ async function sendMail(message) {
   });
 }
 
-async function reserveRateLimit(email, purpose) {
-  const key = crypto.createHash("sha256")
-    .update(purpose + ":" + normalizeEmail(email))
+async function reserveRateLimit(email, purpose, ipAddress) {
+  const emailKey = crypto.createHash("sha256")
+    .update(purpose + ":email:" + normalizeEmail(email))
     .digest("hex");
-  const ref = db.collection("mail_rate_limits").doc(key);
+  const checks = [{
+    ref: db.collection("mail_rate_limits").doc(emailKey),
+    max: MAX_RATE_PER_HOUR,
+    minInterval: MIN_INTERVAL_MS
+  }];
+
+  // Keep only a hash of the caller IP; never store the raw address.
+  const ip = typeof ipAddress === "string" ? ipAddress.trim().split(",")[0] : "";
+  if (ip) {
+    const ipKey = crypto.createHash("sha256")
+      .update(purpose + ":ip:" + ip)
+      .digest("hex");
+    checks.push({
+      ref: db.collection("mail_rate_limits").doc(ipKey),
+      max: 20,
+      minInterval: 3000
+    });
+  }
+
   const now = Date.now();
-
   return db.runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(ref);
-    const data = snapshot.exists ? snapshot.data() : {};
-    const attempts = Array.isArray(data.attempts)
-      ? data.attempts.filter((time) => Number.isFinite(time) && now - time < 60 * 60 * 1000)
-      : [];
-    const lastAttempt = attempts.length ? attempts[attempts.length - 1] : 0;
+    const snapshots = await Promise.all(checks.map((item) => transaction.get(item.ref)));
+    const updated = [];
 
-    if (attempts.length >= MAX_RATE_PER_HOUR || (lastAttempt && now - lastAttempt < MIN_INTERVAL_MS)) {
-      return false;
+    for (let index = 0; index < checks.length; index++) {
+      const data = snapshots[index].exists ? snapshots[index].data() : {};
+      const attempts = Array.isArray(data.attempts)
+        ? data.attempts.filter((time) => Number.isFinite(time) && now - time < 60 * 60 * 1000)
+        : [];
+      const lastAttempt = attempts.length ? attempts[attempts.length - 1] : 0;
+
+      if (attempts.length >= checks[index].max ||
+          (lastAttempt && now - lastAttempt < checks[index].minInterval)) {
+        return false;
+      }
+      attempts.push(now);
+      updated.push({ ref: checks[index].ref, attempts: attempts });
     }
 
-    attempts.push(now);
-    transaction.set(ref, {
-      purpose: purpose,
-      attempts: attempts,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    for (const item of updated) {
+      transaction.set(item.ref, {
+        purpose: purpose,
+        attempts: item.attempts,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
     return true;
   });
 }
@@ -217,7 +242,7 @@ exports.sendCustomVerificationEmail = onCall({
   }
   if (user.emailVerified) return { ok: true, alreadyVerified: true };
 
-  const allowed = await reserveRateLimit(email, "email_verification");
+  const allowed = await reserveRateLimit(email, "email_verification", request.rawRequest?.ip);
   if (!allowed) {
     throw new HttpsError("resource-exhausted", "Слишком много запросов. Повторите попытку позже.");
   }
@@ -261,7 +286,7 @@ exports.requestCustomPasswordReset = onCall({
 
   if (!isValidEmail(email)) return { ok: true };
 
-  const allowed = await reserveRateLimit(email, "password_reset");
+  const allowed = await reserveRateLimit(email, "password_reset", request.rawRequest?.ip);
   if (!allowed) {
     throw new HttpsError("resource-exhausted", "Слишком много запросов. Повторите попытку позже.");
   }
