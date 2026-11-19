@@ -26,7 +26,7 @@ function doPost(e) {
     }
 
     var recipient = String(payload.to || "").trim().toLowerCase();
-    var subject = String(payload.subject || "").replace(/[\\r\\n]+/g, " ").trim();
+    var subject = String(payload.subject || "").replace(/[\r\n]+/g, " ").trim();
     var textBody = String(payload.text || "");
     var htmlBody = String(payload.html || "");
 
@@ -71,7 +71,7 @@ function constantTimeEquals(actual, expected) {
 }
 
 function isValidEmail(value) {
-  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value) && value.length <= 254;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
 }
 
 function jsonResponse(payload) {
