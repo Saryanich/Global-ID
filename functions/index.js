@@ -41,6 +41,34 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function buildEmailHtml(options) {
+  const title = options.title || "Уведомление IT Global";
+  const preheader = options.preheader || title;
+  const content = options.content || "";
+  const button = options.buttonText && options.buttonUrl
+    ? '<div style="text-align:center;margin:30px 0 24px">' +
+      '<a href="' + escapeHtml(options.buttonUrl) + '" style="display:inline-block;padding:15px 26px;border-radius:12px;background:linear-gradient(100deg,#07965c,#1684db);color:#ffffff;text-decoration:none;font-weight:700;font-size:15px">' +
+      escapeHtml(options.buttonText) + '</a></div>'
+    : "";
+
+  return '<!doctype html><html lang="ru"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' + escapeHtml(title) + '</title></head>' +
+    '<body style="margin:0;padding:28px 12px;background:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#172437">' +
+    '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + escapeHtml(preheader) + '</div>' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:22px;overflow:hidden;box-shadow:0 12px 38px rgba(20,45,75,.10)">' +
+    '<tr><td style="padding:28px 30px;background:linear-gradient(110deg,#061f2c,#0b3850 58%,#27214b)">' +
+    '<div style="font-size:12px;letter-spacing:3px;font-weight:800;color:#8ee7c1">IT GLOBAL</div>' +
+    '<div style="margin-top:8px;font-size:25px;line-height:1.25;font-weight:800;color:#ffffff">Global ID</div>' +
+    '<div style="margin-top:7px;font-size:13px;color:#c3d9e8">Люди • технологии • возможности</div>' +
+    '</td></tr><tr><td style="padding:34px 30px 28px">' +
+    '<h1 style="margin:0 0 18px;font-size:23px;line-height:1.3;color:#12243a">' + escapeHtml(title) + '</h1>' +
+    '<div style="font-size:15px;line-height:1.75;color:#42536a">' + content + '</div>' + button +
+    '<div style="height:1px;background:#e7edf3;margin:28px 0 20px"></div>' +
+    '<div style="font-size:14px;line-height:1.7;color:#43536a">С уважением,<br><strong style="color:#152b40">Команда IT Global</strong></div>' +
+    '<div style="margin-top:14px;font-size:12px;color:#8795a6">Это автоматическое уведомление. Пожалуйста, не отвечайте на него.</div>' +
+    '</td></tr></table></body></html>';
+}
+
 async function sendMail(message) {
   const endpoint = ITGLOBAL_MAIL_WEBAPP_URL.value();
   const token = ITGLOBAL_MAIL_WEBAPP_TOKEN.value();
