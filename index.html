@@ -943,6 +943,10 @@
         let codeWatcher = null;
         let deviceInfoPromise = null;
         let authStateResolved = false;
+        let profileLoadUid = null;
+        let profileLoadPromise = null;
+        let remoteLockHandledUid = null;
+        let emergencyLockInProgress = false;
         // Prevent the auth observer from checking the account before the new users/{uid}
         // document has finished writing during Firebase's automatic registration sign-in.
         let registrationInProgress = false;
@@ -2067,7 +2071,9 @@
                 else if (error.code === 'auth/too-many-requests') msg = 'Слишком много попыток';
                 else if (error.code === 'auth/invalid-email') msg = 'Неверный email';
                 else if (error.code === 'auth/invalid-credential') msg = 'Неверный Global ID/email или пароль';
-                else if (error.code === 'permission-denied' || error.code === 'firestore/permission-denied') msg = 'Firebase Rules запрещают чтение профиля. Проверьте правила Firestore.';
+                else if (error.code === 'permission-denied' || error.code === 'firestore/permission-denied') msg = 'Firebase Rules запретили чтение профиля. Проверьте разрешение read для users/{uid}.';
+                else if (error.code === 'unavailable') msg = 'Firestore временно недоступен. Проверьте соединение и повторите вход.';
+                else if (error.code === 'deadline-exceeded') msg = 'База данных не ответила вовремя. Повторите попытку.';
                 showMessage('authMessage', msg, true);
             }
         };
@@ -2075,16 +2081,37 @@
         // ==================== ВХОД В ПРОФИЛЬ ====================
         async function enterProfile(user) {
             currentUser = user;
-
-            // A service callback has already completed authentication and device
-            // verification. Return immediately instead of rendering/loading the
-            // Global ID profile first; the destination service loads its own data.
             if (returnToRequestedService()) return;
 
+            if (profileLoadUid === user.uid && profileLoadPromise) {
+                await profileLoadPromise;
+                return;
+            }
+            profileLoadUid = user.uid;
             document.getElementById('authForm').style.display = 'none';
             document.getElementById('profilePanel').style.display = 'block';
-            await loadProfile(user);
-            startUserStatusListener(user.uid);
+            profileLoadPromise = (async () => {
+                await loadProfile(user);
+                startUserStatusListener(user.uid);
+            })();
+            try {
+                await profileLoadPromise;
+            } catch (error) {
+                console.error('Не удалось загрузить профиль Global ID:', error);
+                document.getElementById('profilePanel').style.display = 'none';
+                document.getElementById('authForm').style.display = 'block';
+                showScreen('loginMode');
+                const message = error?.code === 'permission-denied' || error?.code === 'firestore/permission-denied'
+                    ? 'Firebase Rules запретили чтение профиля. Проверьте доступ к users/{uid}.'
+                    : error?.code === 'unavailable'
+                        ? 'База данных временно недоступна. Проверьте соединение и повторите вход.'
+                        : 'Не удалось загрузить профиль. Обновите страницу или повторите вход.';
+                showMessage('authMessage', message, true);
+                throw error;
+            } finally {
+                profileLoadPromise = null;
+                profileLoadUid = null;
+            }
         }
 
         function setRegistrationProgress(percent, message) {
@@ -2312,10 +2339,12 @@
                 document.getElementById('noCodeMessage').style.display = 'block';
                 document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
 
-                showMessage('profileMessage', '🚨 Аккаунт экстренно заблокирован!', false);
-                setTimeout(() => logout(), 2000);
+                emergencyLockInProgress = true;
+                showMessage('profileMessage', 'Аккаунт заблокирован. Все активные сеансы будут завершены.', false);
+                setTimeout(() => logout(), 1200);
             } catch (error) {
-                showMessage('profileMessage', '❌ Ошибка: ' + error.message, true);
+                emergencyLockInProgress = false;
+                showMessage('profileMessage', 'Не удалось заблокировать аккаунт: ' + (error?.message || 'ошибка базы данных'), true);
             }
         };
 
@@ -2428,6 +2457,7 @@
                 }).catch(() => {});
             }
             await signOut(auth);
+            emergencyLockInProgress = false;
         };
 
         // ==================== СМЕНА ДОВЕРЕННОГО УСТРОЙСТВА ====================
@@ -2500,9 +2530,10 @@
             userStatusListener = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists() && currentUser && currentUser.uid === uid) {
                     const data = docSnap.data();
-                    if (data.accountLocked === true) {
-                        showMessage('profileMessage', '⚠️ Ваш аккаунт был заблокирован!', true);
-                        setTimeout(() => logout(), 2000);
+                    if (data.accountLocked === true && !emergencyLockInProgress && remoteLockHandledUid !== uid) {
+                        remoteLockHandledUid = uid;
+                        showMessage('profileMessage', 'Аккаунт заблокирован с другого устройства. Текущий сеанс будет завершён.', true);
+                        setTimeout(() => logout(), 1500);
                     }
                 }
             }, (error) => {
@@ -2552,6 +2583,10 @@
         // ==================== ЗАГРУЗКА ПРОФИЛЯ ====================
         async function loadProfile(user) {
             currentUser = user;
+            const devicesContainer = document.getElementById('devicesList');
+            if (devicesContainer) devicesContainer.innerHTML = '<div class="info-text">Загружаем список устройств…</div>';
+            const globalIdValue = document.getElementById('globalIdValue');
+            if (globalIdValue) globalIdValue.textContent = 'Загрузка…';
 
             const userDoc = await getDoc(doc(db, "users", user.uid));
             currentUserData = userDoc.data();
@@ -2598,6 +2633,9 @@
 
             if (currentUserData.globalId) {
                 generateQR(currentUserData.globalId);
+            } else {
+                const qrContainer = document.getElementById('qrContainer');
+                if (qrContainer) qrContainer.innerHTML = '<div class="info-text">QR-код появится после восстановления Global ID</div>';
             }
 
             renderDevicesList(currentUserData.trustedDevices || []);
@@ -2614,6 +2652,9 @@
                 if (codeWatcher) { codeWatcher(); codeWatcher = null; }
                 currentUser = null;
                 currentUserData = null;
+                profileLoadUid = null;
+                profileLoadPromise = null;
+                remoteLockHandledUid = null;
                 pendingUser = null;
                 registrationHandledUid = null;
                 unlockHandledUid = null;
@@ -2674,7 +2715,19 @@
                 return;
             }
 
-            const profileCheck = await getDoc(doc(db, "users", user.uid));
+            let profileCheck;
+            try {
+                profileCheck = await getDoc(doc(db, "users", user.uid));
+            } catch (profileError) {
+                console.error('Не удалось прочитать профиль при восстановлении сессии:', profileError);
+                await signOut(auth);
+                showScreen('loginMode');
+                const message = profileError?.code === 'permission-denied'
+                    ? 'Нет доступа к профилю в Firestore. Проверьте правила чтения users/{uid}.'
+                    : 'Не удалось загрузить профиль из базы данных. Проверьте соединение и повторите вход.';
+                showMessage('authMessage', message, true);
+                return;
+            }
             if (!profileCheck.exists()) {
                 await signOut(auth);
                 showScreen('loginMode');
