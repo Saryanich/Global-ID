@@ -2322,6 +2322,7 @@
             if (!ok) return;
             if (!currentUser) return;
 
+            emergencyLockInProgress = true;
             try {
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     accountLocked: true,
@@ -2339,7 +2340,6 @@
                 document.getElementById('noCodeMessage').style.display = 'block';
                 document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
 
-                emergencyLockInProgress = true;
                 showMessage('profileMessage', 'Аккаунт заблокирован. Все активные сеансы будут завершены.', false);
                 setTimeout(() => logout(), 1200);
             } catch (error) {
