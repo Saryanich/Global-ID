@@ -1766,6 +1766,7 @@
                     twoFactorCodePlain: null,
                     twoFactorCodeExpires: null,
                     pendingDeviceInfo: null,
+                    globalIdLastLogin: serverTimestamp(),
                     online: true,
                     lastSeen: serverTimestamp(),
                     currentIP: currentIP,
@@ -2038,13 +2039,10 @@
                     showMessage('authMessage', 'Доступ к Global-ID для этого аккаунта отключён.', true);
                     return;
                 }
-                await updateDoc(doc(db, 'users', user.uid), {
-                    globalIdLastLogin: serverTimestamp()
-                });
-
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
                     await updateDoc(doc(db, 'users', user.uid), {
+                        globalIdLastLogin: serverTimestamp(),
                         online: true,
                         lastSeen: serverTimestamp(),
                         currentIP: currentIP,
@@ -2682,7 +2680,12 @@
                 showMessage('authMessage', 'Профиль Global ID не найден. Аккаунт не заблокирован; требуется восстановить синхронизацию профиля.', true);
                 return;
             }
-            if (!user.emailVerified || needsEmailOwnershipCheck(profileCheck.data())) {
+            if (!user.emailVerified) {
+                document.getElementById('verificationEmail').textContent = user.email || '';
+                showScreen('emailVerificationMode');
+                return;
+            }
+            if (needsEmailOwnershipCheck(profileCheck.data())) {
                 await requestEmailOwnershipCheck(user.email, 'login');
                 return;
             }
@@ -2691,6 +2694,11 @@
 
             if (trusted) {
                 if (codeWatcher) { codeWatcher(); codeWatcher = null; }
+                await updateDoc(doc(db, 'users', user.uid), {
+                    globalIdLastLogin: serverTimestamp(),
+                    online: true,
+                    lastSeen: serverTimestamp()
+                });
                 await enterProfile(user);
             } else {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
