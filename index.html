@@ -1781,6 +1781,7 @@
                 sessionStorage.removeItem('itglobal_pending_uid');
                 sessionStorage.removeItem('itglobal_pending_email');
                 sessionStorage.removeItem('itglobal_pending_unlock');
+                if (unlockAfter2FA) localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
                 pendingUnlockAfter2FA = false;
                 unlockHandledUid = null;
 
@@ -2305,6 +2306,7 @@
                     pendingUser = null;
                     pendingUnlockAfter2FA = false;
                     unlockHandledUid = null;
+                    localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
                     await enterProfile(user);
                     showMessage('profileMessage', 'Аккаунт разблокирован на доверенном устройстве.', false);
                 } else {
