@@ -2016,7 +2016,12 @@
                 } catch (statusError) {
                     console.error('Не удалось проверить статус аккаунта:', statusError);
                     await signOut(auth);
-                    showMessage('authMessage', 'Не удалось проверить профиль в базе данных. Это не блокировка аккаунта. Повторите вход позже.', true);
+                    const dbMessage = statusError?.code === 'permission-denied'
+                        ? 'Firebase Rules запретили прочитать статус аккаунта. Это не блокировка. Проверьте правило read для users/{uid}.'
+                        : statusError?.code === 'unavailable'
+                            ? 'Firestore временно недоступен. Аккаунт не заблокирован. Проверьте интернет и повторите вход.'
+                            : 'Не удалось получить статус аккаунта из Firestore. Это не блокировка. Повторите вход позже.';
+                    showMessage('authMessage', dbMessage, true);
                     return;
                 }
                 if (locked) {
