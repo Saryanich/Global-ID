@@ -5,7 +5,7 @@
  *   Execute as: Me
  *   Who has access: Anyone
  *
- * Store ITGLOBAL_MAIL_TOKEN in Script Properties.
+ * Store ITGLOBAL_MAIL_WEBAPP_TOKEN in Script Properties.
  * The token must match the Firebase Functions secret of the same name.
  *
  * This script uses MailApp only. It cannot read or search the Gmail inbox.
