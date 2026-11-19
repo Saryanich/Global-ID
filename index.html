@@ -941,35 +941,18 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification, sendPasswordResetEmail, reload, onAuthStateChanged, browserLocalPersistence, setPersistence, EmailAuthProvider, reauthenticateWithCredential, multiFactor, TotpMultiFactorGenerator, getMultiFactorResolver } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         auth.languageCode = 'ru';
         const db = getFirestore();
-        const functions = getFunctions(app);
-        const sendCustomVerificationEmail = httpsCallable(functions, 'sendCustomVerificationEmail');
-        const requestCustomPasswordReset = httpsCallable(functions, 'requestCustomPasswordReset');
-
-        // Until Cloud Functions and Gmail OAuth are configured, keep Firebase's
-        // built-in mail flow as a safe fallback so registration and recovery keep working.
-        async function sendCustomMailOrFallback(callable, payload, fallback) {
-            try {
-                await callable(payload);
-                return true;
-            } catch (error) {
-                const code = error?.code || '';
-                const canFallback = [
-                    'functions/not-found',
-                    'functions/failed-precondition',
-                    'functions/unavailable',
-                    'functions/internal'
-                ].includes(code);
-                if (!canFallback) throw error;
-                console.warn('Custom IT Global mail is not ready; using Firebase default email.', code);
-                await fallback();
-                return false;
-            }
+        // Email delivery currently uses Firebase Authentication's built-in templates.
+        // No custom mail gateway or Cloud Functions dependency is required.
+        const sendCustomVerificationEmail = null;
+        const requestCustomPasswordReset = null;
+        async function sendCustomMailOrFallback(_callable, _payload, fallback) {
+            await fallback();
+            return false;
         }
 
         // Центральный вход: после успешной авторизации возвращаем пользователя
