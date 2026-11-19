@@ -1917,8 +1917,10 @@
                     return;
                 }
                 localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
+                unlockStage = 'device';
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
+                    unlockStage = 'unlock';
                     await updateDoc(doc(db, 'users', user.uid), {
                         globalIdLastLogin: serverTimestamp(),
                         online: true,
@@ -2191,6 +2193,7 @@
 
         // ==================== РАЗБЛОКИРОВКА ====================
         window.unlockAccount = async () => {
+            let unlockStage = 'password';
             const password = document.getElementById('unlockPassword').value;
             if (!password) {
                 showMessage('unlockMessage', 'Введите пароль от Global ID. Если забыли его, воспользуйтесь восстановлением пароля ниже.', true);
@@ -2209,6 +2212,9 @@
                 const user = userCred.user;
                 unlockHandledUid = user.uid;
 
+                unlockStage = 'email';
+                // Refresh Firebase user metadata before deciding whether email verification is complete.
+                await reload(user);
                 if (!user.emailVerified) {
                     try {
                         await sendEmailVerification(user);
@@ -2247,6 +2253,7 @@
                     await enterProfile(user);
                     showMessage('profileMessage', 'Аккаунт разблокирован на доверенном устройстве.', false);
                 } else {
+                    unlockStage = 'two-factor';
                     // Keep accountLocked=true until the active-device code is verified.
                     pendingUnlockAfter2FA = true;
                     sessionStorage.setItem('itglobal_pending_unlock', '1');
@@ -2269,11 +2276,25 @@
                         console.warn('Не удалось завершить незавершённую сессию разблокировки:', signOutError);
                     }
                 }
-                const message = error.code === 'auth/too-many-requests'
-                    ? 'Слишком много попыток. Подождите и попробуйте позже.'
-                    : error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password'
-                        ? 'Неверный пароль. Если вы его восстановили, используйте новый пароль из письма.'
-                        : 'Не удалось подтвердить пароль. Проверьте подключение и попробуйте снова.';
+                const code = error?.code || '';
+                let message;
+                if (code === 'auth/too-many-requests') {
+                    message = 'Слишком много попыток. Подождите и попробуйте позже.';
+                } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/invalid-login-credentials') {
+                    message = 'Неверный пароль. Если вы его восстановили, используйте новый пароль из письма.';
+                } else if (code === 'auth/network-request-failed' || code === 'unavailable' || code === 'deadline-exceeded') {
+                    message = unlockStage === 'email'
+                        ? 'Не удалось проверить подтверждение почты из-за сетевой ошибки Firebase. Проверьте соединение и повторите попытку.'
+                        : 'Сервис Firebase временно недоступен. Проверьте соединение и повторите попытку.';
+                } else if (unlockStage === 'email') {
+                    message = 'Не удалось проверить статус подтверждения почты (' + (code || error?.message || 'неизвестная ошибка') + ').';
+                } else if (unlockStage === 'two-factor') {
+                    message = 'Почта и пароль подтверждены, но не удалось создать запрос кода для доверенного устройства. Повторите попытку.';
+                } else if (unlockStage === 'unlock') {
+                    message = 'Почта подтверждена, но не удалось обновить статус разблокировки аккаунта. Повторите попытку.';
+                } else {
+                    message = 'Не удалось выполнить вход. ' + (error?.message || 'Проверьте подключение и попробуйте снова.');
+                }
                 showMessage('unlockMessage', message, true);
             } finally {
                 unlockInProgress = false;
