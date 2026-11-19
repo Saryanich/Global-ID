@@ -2366,6 +2366,7 @@
                         twoFactorCodePlain: null,
                         twoFactorCodeExpires: null,
                         pendingDeviceInfo: null,
+                        globalIdLastLogin: serverTimestamp(),
                         online: true,
                         lastSeen: serverTimestamp()
                     });
@@ -2678,11 +2679,6 @@
                 await signOut(auth);
                 showScreen('loginMode');
                 showMessage('authMessage', 'Профиль Global ID не найден. Аккаунт не заблокирован; требуется восстановить синхронизацию профиля.', true);
-                return;
-            }
-            if (!user.emailVerified) {
-                document.getElementById('verificationEmail').textContent = user.email || '';
-                showScreen('emailVerificationMode');
                 return;
             }
             if (needsEmailOwnershipCheck(profileCheck.data())) {
