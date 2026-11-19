@@ -1860,13 +1860,12 @@
             try {
                 const challenge = crypto.randomUUID();
                 const safePurpose = purpose === 'unlock' ? 'unlock' : 'login';
-                const continueUrl = new URL(location.origin + location.pathname);
-                continueUrl.searchParams.set('emailProofPurpose',safePurpose);
-                continueUrl.searchParams.set('emailProofChallenge',challenge);
                 localStorage.setItem(EMAIL_PROOF_CHALLENGE_KEY,JSON.stringify({
                     challenge,email:normalized,uid:user.uid,purpose:safePurpose,expiresAt:Date.now()+30*60*1000
                 }));
-                await sendEmailVerification(user,{url:continueUrl.toString(),handleCodeInApp:false});
+                // Use Firebase's default verification handler. This keeps the action URL
+                // on glob-data.firebaseapp.com and does not require authorizing GitHub Pages.
+                await sendEmailVerification(user);
                 document.getElementById('verificationEmail').textContent = normalized;
                 showScreen('emailVerificationMode');
                 showMessage('emailVerificationMessage','Письмо отправлено на '+normalized+'. Нажмите в письме «Подтвердить адрес электронной почты», затем вернитесь на сайт и войдите по обычному паролю.',false);
@@ -2093,7 +2092,17 @@
             if(!user){showMessage('emailVerificationMessage','После перехода по ссылке вернитесь на сайт и войдите по обычному паролю.',false);return;}
             try {
                 await reload(user);
-                const marker=readEmailProof(EMAIL_PROOF_MARKER_KEY);
+                let marker=readEmailProof(EMAIL_PROOF_MARKER_KEY);
+                // With Firebase's default action handler there is no return URL to this
+                // site, so complete the local challenge after the user returns and checks.
+                const pending=readEmailProof(EMAIL_PROOF_CHALLENGE_KEY);
+                if(user.emailVerified && pending?.uid===user.uid &&
+                    pending.email===String(user.email||'').toLowerCase() &&
+                    pending.expiresAt>Date.now() && !marker){
+                    marker={...pending,verifiedAt:Date.now()};
+                    localStorage.setItem(EMAIL_PROOF_MARKER_KEY,JSON.stringify(marker));
+                    localStorage.removeItem(EMAIL_PROOF_CHALLENGE_KEY);
+                }
                 if(marker?.uid===user.uid&&marker?.purpose&&await consumeEmailOwnershipProof(user,marker.purpose)){
                     await signOut(auth);showScreen('loginMode');
                     showMessage('authMessage','Почта подтверждена. Теперь войдите по своему паролю.',false);return;
