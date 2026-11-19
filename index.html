@@ -1917,10 +1917,8 @@
                     return;
                 }
                 localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
-                unlockStage = 'device';
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
-                    unlockStage = 'unlock';
                     await updateDoc(doc(db, 'users', user.uid), {
                         globalIdLastLogin: serverTimestamp(),
                         online: true,
@@ -2231,8 +2229,10 @@
                     return;
                 }
 
+                unlockStage = 'device';
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
+                    unlockStage = 'unlock';
                     await updateDoc(doc(db, 'users', user.uid), {
                         accountLocked: false,
                         lockedAt: null,
