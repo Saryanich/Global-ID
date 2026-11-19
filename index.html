@@ -1811,6 +1811,9 @@
             pendingUnlockAfter2FA = false;
             unlockHandledUid = null;
             sessionStorage.removeItem('itglobal_pending_unlock');
+            sessionStorage.removeItem(EMAIL_LINK_UNLOCK_BYPASS_KEY);
+            localStorage.removeItem(EMAIL_LINK_EMAIL_KEY);
+            localStorage.removeItem(EMAIL_LINK_PURPOSE_KEY);
             pendingUser = null;
             pendingEmail = null;
             try { await signOut(auth); } catch {}
@@ -1823,43 +1826,100 @@
         const EMAIL_LINK_UNLOCK_BYPASS_KEY = 'itglobal_unlock_email_verified_uid_v1';
         const EMAIL_PROOF_VERSION = 1;
         const EMAIL_PROOF_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+        const EMAIL_UNLOCK_PROOF_MAX_AGE = 15 * 60 * 1000;
+        let emailOwnershipRequestInProgress = false;
 
         async function requestEmailOwnershipCheck(email, purpose = 'login') {
+            if (emailOwnershipRequestInProgress) return true;
             const normalizedEmail = String(email || '').trim().toLowerCase();
-            if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error('Не удалось определить email аккаунта.');
-            await sendSignInLinkToEmail(auth, normalizedEmail, {
-                url: window.location.origin + window.location.pathname,
-                handleCodeInApp: true
-            });
-            localStorage.setItem(EMAIL_LINK_EMAIL_KEY, normalizedEmail);
-            localStorage.setItem(EMAIL_LINK_PURPOSE_KEY, purpose);
-            document.getElementById('verificationEmail').textContent = normalizedEmail;
-            showScreen('emailVerificationMode');
-            showMessage('emailVerificationMessage', 'Ссылка для подтверждения владельца отправлена. Откройте письмо на этом устройстве и перейдите по ссылке.', false);
-            if (auth.currentUser) await signOut(auth);
+            if (!normalizedEmail || !normalizedEmail.includes('@')) {
+                showScreen('emailVerificationMode');
+                showMessage('emailVerificationMessage', 'Не удалось определить email аккаунта. Вернитесь ко входу и повторите попытку.', true);
+                return false;
+            }
+
+            const safePurpose = purpose === 'unlock' ? 'unlock' : 'login';
+            emailOwnershipRequestInProgress = true;
+            try {
+                const continueUrl = new URL(window.location.origin + window.location.pathname);
+                continueUrl.searchParams.set('emailLinkPurpose', safePurpose);
+                await sendSignInLinkToEmail(auth, normalizedEmail, {
+                    url: continueUrl.toString(),
+                    handleCodeInApp: true
+                });
+                localStorage.setItem(EMAIL_LINK_EMAIL_KEY, normalizedEmail);
+                localStorage.setItem(EMAIL_LINK_PURPOSE_KEY, safePurpose);
+                document.getElementById('verificationEmail').textContent = normalizedEmail;
+                showScreen('emailVerificationMode');
+                showMessage('emailVerificationMessage', 'Ссылка для подтверждения владельца отправлена на ' + normalizedEmail + '. Откройте письмо и перейдите по ссылке.', false);
+                if (auth.currentUser) await signOut(auth);
+                return true;
+            } catch (error) {
+                console.error('Ошибка отправки ссылки подтверждения владельца:', error);
+                showScreen('emailVerificationMode');
+                const message = error?.code === 'auth/operation-not-allowed'
+                    ? 'В Firebase нужно включить Email link (passwordless sign-in) в способах входа.'
+                    : error?.code === 'auth/unauthorized-continue-uri' || error?.code === 'auth/unauthorized-domain'
+                        ? 'Добавьте saryanich.github.io в Firebase Authentication → Settings → Authorized domains.'
+                        : error?.code === 'auth/too-many-requests'
+                            ? 'Слишком много запросов. Подождите немного и попробуйте ещё раз.'
+                            : 'Не удалось отправить письмо. Проверьте подключение и настройки Firebase Authentication.';
+                showMessage('emailVerificationMessage', message, true);
+                return false;
+            } finally {
+                emailOwnershipRequestInProgress = false;
+            }
         }
 
         function needsEmailOwnershipCheck(userData) {
+            // Force a one-time email check for every account that predates this mechanism.
             if (Number(userData?.emailProofVersion) !== EMAIL_PROOF_VERSION) return true;
-            const verifiedAt = asDate(userData?.lastEmailVerificationAt);
-            return !verifiedAt || (Date.now() - verifiedAt.getTime()) >= EMAIL_PROOF_MAX_AGE;
+
+            // Repeat only after more than seven days without a Global ID login.
+            const lastLogin = asDate(userData?.globalIdLastLogin) ||
+                asDate(userData?.lastSeen) ||
+                asDate(userData?.createdAt);
+            return !lastLogin || (Date.now() - lastLogin.getTime()) > EMAIL_PROOF_MAX_AGE;
+        }
+
+        function getEmailLinkPurpose(linkUrl) {
+            try {
+                let current = new URL(linkUrl);
+                for (let depth = 0; depth < 5; depth++) {
+                    const purpose = current.searchParams.get('emailLinkPurpose');
+                    if (purpose === 'unlock' || purpose === 'login') return purpose;
+                    const nested = current.searchParams.get('continueUrl') || current.searchParams.get('link');
+                    if (!nested) break;
+                    current = new URL(nested);
+                }
+            } catch {}
+            return localStorage.getItem(EMAIL_LINK_PURPOSE_KEY) === 'unlock' ? 'unlock' : 'login';
         }
 
         // Обрабатываем ссылку до onAuthStateChanged, чтобы не запускать обычный вход.
         if (isSignInWithEmailLink(auth, window.location.href)) {
             let linkEmail = localStorage.getItem(EMAIL_LINK_EMAIL_KEY);
             if (!linkEmail) linkEmail = window.prompt('Введите email, на который было отправлено письмо:');
-            const linkPurpose = localStorage.getItem(EMAIL_LINK_PURPOSE_KEY) || 'login';
+            const linkPurpose = getEmailLinkPurpose(window.location.href);
             if (linkEmail) {
                 try {
                     const linkCredential = await signInWithEmailLink(auth, linkEmail.trim(), window.location.href);
                     await updateDoc(doc(db, 'users', linkCredential.user.uid), {
                         emailProofVersion: EMAIL_PROOF_VERSION,
-                        lastEmailVerificationAt: serverTimestamp()
+                        lastEmailVerificationAt: serverTimestamp(),
+                        globalIdLastLogin: serverTimestamp()
                     });
-                    localStorage.removeItem(EMAIL_LINK_EMAIL_KEY);
-                    localStorage.removeItem(EMAIL_LINK_PURPOSE_KEY);
-                    if (linkPurpose === 'unlock') sessionStorage.setItem(EMAIL_LINK_UNLOCK_BYPASS_KEY, linkCredential.user.uid);
+                    if (linkPurpose === 'unlock') {
+                        localStorage.setItem(EMAIL_LINK_EMAIL_KEY, linkEmail.trim().toLowerCase());
+                        localStorage.setItem(EMAIL_LINK_PURPOSE_KEY, 'unlock');
+                        sessionStorage.setItem(EMAIL_LINK_UNLOCK_BYPASS_KEY, JSON.stringify({
+                            uid: linkCredential.user.uid,
+                            verifiedAt: Date.now()
+                        }));
+                    } else {
+                        localStorage.removeItem(EMAIL_LINK_EMAIL_KEY);
+                        localStorage.removeItem(EMAIL_LINK_PURPOSE_KEY);
+                    }
                     await signOut(auth);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     if (linkPurpose === 'unlock') {
@@ -1933,6 +1993,15 @@
                 if (!user.emailVerified) {
                     document.getElementById('verificationEmail').textContent = user.email || email;
                     showScreen('emailVerificationMode');
+                    try {
+                        await sendEmailVerification(user);
+                        showMessage('emailVerificationMessage', 'Письмо для подтверждения почты отправлено. Проверьте входящие и папку «Спам».', false);
+                    } catch (verificationError) {
+                        console.error('Не удалось отправить письмо подтверждения:', verificationError);
+                        showMessage('emailVerificationMessage', verificationError?.code === 'auth/too-many-requests'
+                            ? 'Слишком много запросов. Подождите немного.'
+                            : 'Не удалось отправить письмо. Нажмите «Отправить письмо ещё раз».', true);
+                    }
                     return;
                 }
 
@@ -2033,11 +2102,7 @@
             const user = auth.currentUser;
             try {
                 if (challengeEmail && challengePurpose) {
-                    await sendSignInLinkToEmail(auth, challengeEmail, {
-                        url: window.location.origin + window.location.pathname,
-                        handleCodeInApp: true
-                    });
-                    showMessage('emailVerificationMessage', 'Новое письмо со ссылкой отправлено. Проверьте входящие и папку «Спам».', false);
+                    await requestEmailOwnershipCheck(challengeEmail, challengePurpose);
                     return;
                 }
                 if (!user) {
@@ -2082,7 +2147,8 @@
                 }
                 await updateDoc(doc(db, 'users', auth.currentUser.uid), {
                     emailProofVersion: EMAIL_PROOF_VERSION,
-                    lastEmailVerificationAt: serverTimestamp()
+                    lastEmailVerificationAt: serverTimestamp(),
+                    globalIdLastLogin: serverTimestamp()
                 });
                 await signOut(auth);
                 showScreen('loginMode');
@@ -2275,12 +2341,21 @@
                 const user = userCred.user;
                 unlockHandledUid = user.uid;
 
-                const emailUnlockBypass = sessionStorage.getItem(EMAIL_LINK_UNLOCK_BYPASS_KEY);
-                if (emailUnlockBypass !== user.uid) {
+                let emailUnlockBypass = null;
+                try {
+                    emailUnlockBypass = JSON.parse(sessionStorage.getItem(EMAIL_LINK_UNLOCK_BYPASS_KEY) || 'null');
+                } catch {}
+                const hasFreshUnlockProof = emailUnlockBypass?.uid === user.uid &&
+                    Number.isFinite(emailUnlockBypass?.verifiedAt) &&
+                    Date.now() - emailUnlockBypass.verifiedAt <= EMAIL_UNLOCK_PROOF_MAX_AGE;
+                if (!hasFreshUnlockProof) {
+                    sessionStorage.removeItem(EMAIL_LINK_UNLOCK_BYPASS_KEY);
                     await requestEmailOwnershipCheck(user.email || pendingEmail, 'unlock');
                     return;
                 }
                 sessionStorage.removeItem(EMAIL_LINK_UNLOCK_BYPASS_KEY);
+                localStorage.removeItem(EMAIL_LINK_EMAIL_KEY);
+                localStorage.removeItem(EMAIL_LINK_PURPOSE_KEY);
 
                 const trusted = await isTrustedDevice(user.uid);
                 if (trusted) {
@@ -2343,6 +2418,7 @@
             sessionStorage.removeItem('itglobal_pending_uid');
             sessionStorage.removeItem('itglobal_pending_email');
             sessionStorage.removeItem('itglobal_pending_unlock');
+            sessionStorage.removeItem(EMAIL_LINK_UNLOCK_BYPASS_KEY);
             pendingUnlockAfter2FA = false;
             unlockHandledUid = null;
             pendingUser = null;
@@ -2547,9 +2623,20 @@
                 sessionStorage.removeItem('itglobal_pending_unlock');
                 sessionStorage.removeItem('itglobal_pending_uid');
                 sessionStorage.removeItem('itglobal_pending_email');
-                showScreen('loginMode');
-                document.getElementById('loginIdentifier').value = '';
-                document.getElementById('loginPassword').value = '';
+                const pendingEmailLink = localStorage.getItem(EMAIL_LINK_EMAIL_KEY);
+                if (pendingEmailLink && localStorage.getItem(EMAIL_LINK_PURPOSE_KEY) === 'unlock' &&
+                    sessionStorage.getItem(EMAIL_LINK_UNLOCK_BYPASS_KEY)) {
+                    pendingEmail = pendingEmailLink;
+                    showScreen('unlockMode');
+                    showMessage('unlockMessage', 'Почта подтверждена. Повторно введите пароль, чтобы завершить разблокировку.', false);
+                } else if (pendingEmailLink) {
+                    document.getElementById('verificationEmail').textContent = pendingEmailLink;
+                    showScreen('emailVerificationMode');
+                } else {
+                    showScreen('loginMode');
+                    document.getElementById('loginIdentifier').value = '';
+                    document.getElementById('loginPassword').value = '';
+                }
                 return;
             }
 
@@ -2595,7 +2682,7 @@
                 showMessage('authMessage', 'Профиль Global ID не найден. Аккаунт не заблокирован; требуется восстановить синхронизацию профиля.', true);
                 return;
             }
-            if (needsEmailOwnershipCheck(profileCheck.data())) {
+            if (!user.emailVerified || needsEmailOwnershipCheck(profileCheck.data())) {
                 await requestEmailOwnershipCheck(user.email, 'login');
                 return;
             }
