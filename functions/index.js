@@ -85,7 +85,7 @@ function buildRawMime(message) {
   if (!isValidEmail(safeTo)) throw new Error("Invalid recipient email");
   if (/[\r\n]/.test(message.subject)) throw new Error("Invalid email subject");
 
-  const wrapBase64 = (value) => value.match(/.{1,76}/g)?.join("\\r\\n") || "";
+  const wrapBase64 = (value) => value.match(/.{1,76}/g)?.join("\r\n") || "";
   const plain = wrapBase64(Buffer.from(String(message.text || ""), "utf8").toString("base64"));
   const rich = wrapBase64(Buffer.from(String(message.html || ""), "utf8").toString("base64"));
   return [
