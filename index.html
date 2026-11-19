@@ -652,20 +652,37 @@
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="font-size:48px; margin-bottom:10px;">🔒</div>
                     <h3 style="color:#ff6666; margin-bottom:8px;">Аккаунт заблокирован</h3>
-                    <p style="color:#ffaa00; font-size:14px;">Сначала подтвердите владение почтой, затем завершите разблокировку</p>
+                    <p style="color:#ffaa00; font-size:14px;">Введите пароль и код экстренной разблокировки, сохранённый при блокировке аккаунта.</p>
                 </div>
                 <div class="form-group">
                     <label class="form-label">🔒 Пароль</label>
                     <input type="password" id="unlockPassword" placeholder="Введите пароль от Global ID" autocomplete="current-password">
                 </div>
+                <div class="form-group">
+                    <label class="form-label">🔑 Код разблокировки (6 символов)</label>
+                    <input type="text" id="unlockRecoveryCode" placeholder="Например: f@9p~1" maxlength="6" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
                 <div class="danger-box">
                     <strong>🚨 ЭКСТРЕННАЯ БЛОКИРОВКА АКТИВНА</strong><br>
-                    Подтвердите почту. Если пароль забыт или мог стать известен другому человеку, воспользуйтесь восстановлением пароля ниже.
+                    Для разблокировки нужны пароль и шестизначный код, который был показан при блокировке.
                 </div>
-                <button class="btn btn-primary" onclick="unlockAccount()">✉️ Подтвердить почту и продолжить</button>
+                <button class="btn btn-primary" onclick="unlockAccount()">🔓 Разблокировать аккаунт</button>
                 <button class="password-recovery-link" onclick="sendUnlockPasswordEmail()">Забыли пароль или хотите заменить его? Восстановить пароль</button>
                 <button class="btn btn-secondary" onclick="cancelUnlock()" style="margin-top:10px;">← Назад</button>
                 <div id="unlockMessage" class="message"></div>
+            </div>
+
+            <div id="emergencyCodeMode" style="display:none; text-align:center;">
+                <img src="https://i.ibb.co/Y7j6w8KP/bfbf965f-9bf0-44a5-bfdf-6d695106a6e0.webp" alt="IT Global" class="logo-img logo-img-small">
+                <h2 style="color:#ff6666;">Аккаунт заблокирован</h2>
+                <p>Сохраните код. Он понадобится вместе с паролем для разблокировки.</p>
+                <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:22px 0;">
+                    <strong id="emergencyCodeValue" style="font-size:30px;letter-spacing:4px;user-select:all;"></strong>
+                    <button class="btn btn-secondary" type="button" onclick="copyEmergencyCode()">📋 Копировать</button>
+                </div>
+                <p id="emergencyCodeCountdown">Страница закроется через 10 секунд</p>
+                <button class="btn btn-primary" type="button" onclick="closeEmergencyCodeScreen()">Закрыть сейчас</button>
+                <div id="emergencyCodeMessage" class="message"></div>
             </div>
 
             <div id="authMessage" class="message"></div>
@@ -955,6 +972,8 @@
         let registrationHandledUid = null;
         let unlockInProgress = false;
         let unlockHandledUid = null;
+        let emergencyCodeCloseTimer = null;
+        let emergencyCodeCountdownTimer = null;
         let pendingUnlockAfter2FA = false;
         const processed2FACodes = new Set();
 
@@ -1527,7 +1546,7 @@
 
         // ==================== ПЕРЕКЛЮЧАТЕЛИ ЭКРАНОВ ====================
         function showScreen(screenId) {
-            ['loginMode', 'registerMode', 'registrationProgressMode', 'emailVerificationMode', 'twoFactorLoginMode', 'unlockMode'].forEach(id => {
+            ['loginMode', 'registerMode', 'registrationProgressMode', 'emailVerificationMode', 'twoFactorLoginMode', 'unlockMode', 'emergencyCodeMode'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -1895,7 +1914,7 @@
                     localStorage.setItem(PENDING_UNLOCK_EMAIL_KEY, pendingEmail);
                     await signOut(auth);
                     showScreen('unlockMode');
-                    showMessage('unlockMessage', 'Аккаунт заблокирован. Подтвердите почту, а при необходимости восстановите пароль ниже.', true);
+                    showMessage('unlockMessage', 'Аккаунт заблокирован. Введите пароль и код, сохранённый при блокировке.', true);
                     return;
                 }
 
@@ -2153,11 +2172,79 @@
             }
         };
 
+        // ==================== КОД ЭКСТРЕННОЙ РАЗБЛОКИРОВКИ ====================
+        function generateEmergencyUnlockCode() {
+            const random = new Uint32Array(6);
+            crypto.getRandomValues(random);
+            const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const symbols = '@#$%&*~!?';
+            const digits = '23456789';
+            const chars = [
+                letters[random[0] % letters.length],
+                letters[random[1] % letters.length],
+                symbols[random[2] % symbols.length],
+                symbols[random[3] % symbols.length],
+                digits[random[4] % digits.length],
+                digits[random[5] % digits.length]
+            ];
+            const shuffle = new Uint32Array(5);
+            crypto.getRandomValues(shuffle);
+            for (let i = chars.length - 1, j = 0; i > 0; i--, j++) {
+                const k = shuffle[j] % (i + 1);
+                [chars[i], chars[k]] = [chars[k], chars[i]];
+            }
+            return chars.join('');
+        }
+
+        async function hashEmergencyUnlockCode(code, uid) {
+            return sha256Hex(String(code).toUpperCase() + '|' + uid + '|global_id_emergency_unlock_v1');
+        }
+
+        window.copyEmergencyCode = async () => {
+            const code = document.getElementById('emergencyCodeValue')?.textContent || '';
+            if (!code) return;
+            try {
+                await navigator.clipboard.writeText(code);
+                showMessage('emergencyCodeMessage', 'Код скопирован.', false);
+            } catch {
+                const field = document.createElement('textarea');
+                field.value = code;
+                document.body.appendChild(field);
+                field.select();
+                try { document.execCommand('copy'); showMessage('emergencyCodeMessage', 'Код скопирован.', false); }
+                catch { showMessage('emergencyCodeMessage', 'Не удалось скопировать. Выделите код вручную.', true); }
+                field.remove();
+            }
+        };
+
+        window.closeEmergencyCodeScreen = async () => {
+            if (emergencyCodeCloseTimer) clearTimeout(emergencyCodeCloseTimer);
+            if (emergencyCodeCountdownTimer) clearInterval(emergencyCodeCountdownTimer);
+            try { await signOut(auth); } catch (e) { console.warn('Ошибка завершения сеанса:', e); }
+            try { window.close(); } catch {}
+            showScreen('loginMode');
+        };
+
+        function startEmergencyCodeCountdown() {
+            let remaining = 10;
+            const label = document.getElementById('emergencyCodeCountdown');
+            if (label) label.textContent = 'Страница закроется через ' + remaining + ' секунд';
+            if (emergencyCodeCountdownTimer) clearInterval(emergencyCodeCountdownTimer);
+            emergencyCodeCountdownTimer = setInterval(() => {
+                remaining--;
+                if (label) label.textContent = 'Страница закроется через ' + remaining + ' секунд';
+                if (remaining <= 0) {
+                    clearInterval(emergencyCodeCountdownTimer);
+                    window.closeEmergencyCodeScreen();
+                }
+            }, 1000);
+        }
+
         // ==================== ЭКСТРЕННАЯ БЛОКИРОВКА ====================
         window.emergencyLock = async () => {
             const ok = await showConfirm(
                 '🚨 Экстренная блокировка',
-                'Все сессии будут завершены. Для разблокировки потребуется пароль. Продолжить?',
+                'Все сессии будут завершены. Сохраните одноразовый код, который появится после блокировки. Продолжить?',
                 'Заблокировать'
             );
             if (!ok) return;
@@ -2165,7 +2252,10 @@
 
             emergencyLockInProgress = true;
             try {
+                const emergencyCode = generateEmergencyUnlockCode();
+                const emergencyCodeHash = await hashEmergencyUnlockCode(emergencyCode, currentUser.uid);
                 await updateDoc(doc(db, "users", currentUser.uid), {
+                    emergencyUnlockCodeHash: emergencyCodeHash,
                     accountLocked: true,
                     lockedAt: serverTimestamp(),
                     lockedBy: deviceFingerprint,
@@ -2181,8 +2271,9 @@
                 document.getElementById('noCodeMessage').style.display = 'block';
                 document.getElementById('lockStatusDisplay').innerHTML = '<span class="lock-status lock-active">🔒 АККАУНТ ЗАБЛОКИРОВАН</span>';
 
-                showMessage('profileMessage', 'Аккаунт заблокирован. Все активные сеансы будут завершены.', false);
-                setTimeout(() => logout(), 1200);
+                document.getElementById('emergencyCodeValue').textContent = emergencyCode;
+                showScreen('emergencyCodeMode');
+                startEmergencyCodeCountdown();
             } catch (error) {
                 emergencyLockInProgress = false;
                 showMessage('profileMessage', 'Не удалось заблокировать аккаунт: ' + (error?.message || 'ошибка базы данных'), true);
@@ -2191,17 +2282,23 @@
 
         // ==================== РАЗБЛОКИРОВКА ====================
         window.unlockAccount = async () => {
-            let unlockStage = 'password';
             const password = document.getElementById('unlockPassword').value;
+            const recoveryCode = document.getElementById('unlockRecoveryCode').value.trim().toUpperCase();
             if (!password) {
-                showMessage('unlockMessage', 'Введите пароль от Global ID. Если забыли его, воспользуйтесь восстановлением пароля ниже.', true);
+                showMessage('unlockMessage', 'Введите пароль от Global ID.', true);
+                return;
+            }
+            if (!/^(?=.*[A-Z])(?=.*[@#$%&*~!?])(?=.*[0-9])[A-Z0-9@#$%&*~!?]{6}$/.test(recoveryCode) ||
+                (recoveryCode.match(/[A-Z]/g) || []).length !== 2 ||
+                (recoveryCode.match(/[0-9]/g) || []).length !== 2 ||
+                (recoveryCode.match(/[@#$%&*~!?]/g) || []).length !== 2) {
+                showMessage('unlockMessage', 'Введите правильный код из 6 символов: 2 буквы, 2 спецсимвола и 2 цифры.', true);
                 return;
             }
             if (!pendingEmail) {
                 showMessage('unlockMessage', 'Email аккаунта не определён. Вернитесь ко входу и начните заново.', true);
                 return;
             }
-
             if (unlockInProgress) return;
             unlockInProgress = true;
             try {
@@ -2209,92 +2306,52 @@
                 const userCred = await signInWithEmailAndPassword(auth, pendingEmail, password);
                 const user = userCred.user;
                 unlockHandledUid = user.uid;
-
-                unlockStage = 'email';
-                // Refresh Firebase user metadata before deciding whether email verification is complete.
-                await reload(user);
-                if (!user.emailVerified) {
-                    try {
-                        await sendEmailVerification(user);
-                        showScreen('unlockMode');
-                        showMessage('unlockMessage', 'Письмо подтверждения отправлено на ' + user.email + '. Подтвердите почту, вернитесь сюда и нажмите основную кнопку ещё раз.', false);
-                    } catch (verificationError) {
-                        console.error('Не удалось отправить письмо подтверждения:', verificationError);
-                        showMessage('unlockMessage', verificationError?.code === 'auth/too-many-requests'
-                            ? 'Слишком много запросов. Подождите немного.'
-                            : 'Не удалось отправить письмо подтверждения. Проверьте подключение и попробуйте снова.', true);
-                    }
-                    unlockHandledUid = null;
+                const userRef = doc(db, 'users', user.uid);
+                const userSnapshot = await getDoc(userRef);
+                if (!userSnapshot.exists()) throw new Error('Профиль Global ID не найден.');
+                const savedHash = userSnapshot.data()?.emergencyUnlockCodeHash;
+                if (!savedHash || savedHash !== await hashEmergencyUnlockCode(recoveryCode, user.uid)) {
                     try { await signOut(auth); } catch {}
+                    unlockHandledUid = null;
+                    showMessage('unlockMessage', 'Неверный код разблокировки. Проверьте сохранённый код и повторите попытку.', true);
                     return;
                 }
 
-                unlockStage = 'device';
-                const trusted = await isTrustedDevice(user.uid);
-                if (trusted) {
-                    unlockStage = 'unlock';
-                    await updateDoc(doc(db, 'users', user.uid), {
-                        accountLocked: false,
-                        lockedAt: null,
-                        lockedBy: null,
-                        twoFactorCodeHash: null,
-                        twoFactorCodeEncrypted: null,
-                        twoFactorCodePlain: null,
-                        twoFactorCodeExpires: null,
-                        pendingDeviceInfo: null,
-                        globalIdLastLogin: serverTimestamp(),
-                        online: true,
-                        lastSeen: serverTimestamp()
-                    });
-                    pendingUser = null;
-                    pendingUnlockAfter2FA = false;
-                    unlockHandledUid = null;
-                    localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
-                    await enterProfile(user);
-                    showMessage('profileMessage', 'Аккаунт разблокирован на доверенном устройстве.', false);
-                } else {
-                    unlockStage = 'two-factor';
-                    // Keep accountLocked=true until the active-device code is verified.
-                    pendingUnlockAfter2FA = true;
-                    sessionStorage.setItem('itglobal_pending_unlock', '1');
-                    await create2FARequest(user.uid);
-                    pendingUser = user;
-                    sessionStorage.setItem('itglobal_pending_uid', user.uid);
-                    sessionStorage.setItem('itglobal_pending_email', user.email || pendingEmail);
-                    fillDeviceInfoUI();
-                    showScreen('twoFactorLoginMode');
-                    document.getElementById('code1')?.focus();
-                    showMessage('twoFactorMessage', 'Пароль подтверждён. Для завершения разблокировки введите код из уже активного Global ID.', false);
-                }
-            } catch (error) {
-                console.error('Ошибка разблокировки:', error);
+                await updateDoc(userRef, {
+                    accountLocked: false,
+                    lockedAt: null,
+                    lockedBy: null,
+                    emergencyUnlockCodeHash: null,
+                    twoFactorCodeHash: null,
+                    twoFactorCodeEncrypted: null,
+                    twoFactorCodePlain: null,
+                    twoFactorCodeExpires: null,
+                    pendingDeviceInfo: null,
+                    globalIdLastLogin: serverTimestamp(),
+                    online: true,
+                    lastSeen: serverTimestamp()
+                });
+                pendingUser = null;
                 pendingUnlockAfter2FA = false;
                 unlockHandledUid = null;
-                sessionStorage.removeItem('itglobal_pending_unlock');
+                localStorage.removeItem(PENDING_UNLOCK_EMAIL_KEY);
+                document.getElementById('unlockRecoveryCode').value = '';
+                await enterProfile(user);
+                showMessage('profileMessage', 'Аккаунт успешно разблокирован. Старый код больше не действует.', false);
+            } catch (error) {
+                console.error('Ошибка разблокировки:', error);
+                unlockHandledUid = null;
                 if (auth.currentUser) {
-                    try { await signOut(auth); } catch (signOutError) {
-                        console.warn('Не удалось завершить незавершённую сессию разблокировки:', signOutError);
-                    }
+                    try { await signOut(auth); } catch {}
                 }
                 const code = error?.code || '';
-                let message;
-                if (code === 'auth/too-many-requests') {
-                    message = 'Слишком много попыток. Подождите и попробуйте позже.';
-                } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/invalid-login-credentials') {
-                    message = 'Неверный пароль. Если вы его восстановили, используйте новый пароль из письма.';
-                } else if (code === 'auth/network-request-failed' || code === 'unavailable' || code === 'deadline-exceeded') {
-                    message = unlockStage === 'email'
-                        ? 'Не удалось проверить подтверждение почты из-за сетевой ошибки Firebase. Проверьте соединение и повторите попытку.'
-                        : 'Сервис Firebase временно недоступен. Проверьте соединение и повторите попытку.';
-                } else if (unlockStage === 'email') {
-                    message = 'Не удалось проверить статус подтверждения почты (' + (code || error?.message || 'неизвестная ошибка') + ').';
-                } else if (unlockStage === 'two-factor') {
-                    message = 'Почта и пароль подтверждены, но не удалось создать запрос кода для доверенного устройства. Повторите попытку.';
-                } else if (unlockStage === 'unlock') {
-                    message = 'Почта подтверждена, но не удалось обновить статус разблокировки аккаунта. Повторите попытку.';
-                } else {
-                    message = 'Не удалось выполнить вход. ' + (error?.message || 'Проверьте подключение и попробуйте снова.');
-                }
+                const message = code === 'auth/too-many-requests'
+                    ? 'Слишком много попыток. Подождите и попробуйте позже.'
+                    : (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/invalid-login-credentials')
+                        ? 'Неверный пароль.'
+                        : code === 'permission-denied'
+                            ? 'Firebase Rules запретили обновить статус разблокировки. Нужно проверить правила users/{uid}.'
+                            : 'Не удалось разблокировать аккаунт: ' + (error?.message || 'ошибка Firebase.');
                 showMessage('unlockMessage', message, true);
             } finally {
                 unlockInProgress = false;
