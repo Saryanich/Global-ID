@@ -593,11 +593,11 @@
             <div id="emailVerificationMode" style="display:none;">
                 <div class="registration-stage">
                     <div class="verify-email-icon">✉️</div>
-                    <h2 style="color:#00ff66;margin-bottom:8px;">Подтвердите почту</h2>
-                    <p style="color:#c8ffd9;font-size:14px;line-height:1.6;">Мы отправили письмо со ссылкой подтверждения на:</p>
+                    <h2 style="color:#00ff66;margin-bottom:8px;">Подтвердите владение почтой</h2>
+                    <p style="color:#c8ffd9;font-size:14px;line-height:1.6;">Откройте письмо на этом устройстве и перейдите по ссылке, чтобы подтвердить, что почта принадлежит вам:</p>
                     <p id="verificationEmail" style="color:#fff;font-weight:700;overflow-wrap:anywhere;margin:12px 0 18px;"></p>
                     <div class="danger-box" style="border-color:#00cc66;color:#caffd8;text-align:left;">Пока почта не подтверждена, вход в Global ID и Iceberg закрыт. Проверьте также папку «Спам».</div>
-                    <button class="btn btn-primary" onclick="checkEmailVerification()">✅ Я подтвердил почту</button>
+                    <button class="btn btn-primary" onclick="checkEmailVerification()">✅ Проверить подтверждение</button>
                     <button class="btn btn-secondary" onclick="resendEmailVerification()" style="margin-top:10px;">📩 Отправить письмо ещё раз</button>
                     <button class="btn btn-secondary" onclick="cancelEmailVerification()" style="margin-top:10px;">← Вернуться ко входу</button>
                     <div id="emailVerificationMessage" class="message"></div>
@@ -2062,6 +2062,10 @@
         window.checkEmailVerification = async () => {
             const user = auth.currentUser;
             if (!user) {
+                if (localStorage.getItem(EMAIL_LINK_EMAIL_KEY)) {
+                    showMessage('emailVerificationMessage', 'Перейдите по ссылке в письме. После подтверждения вы сможете войти в Global ID.', false);
+                    return;
+                }
                 showMessage('emailVerificationMessage', 'Войдите в аккаунт после подтверждения почты.', true);
                 return;
             }
