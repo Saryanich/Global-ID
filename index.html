@@ -941,11 +941,36 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification, sendPasswordResetEmail, reload, onAuthStateChanged, browserLocalPersistence, setPersistence, EmailAuthProvider, reauthenticateWithCredential, multiFactor, TotpMultiFactorGenerator, getMultiFactorResolver } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         auth.languageCode = 'ru';
         const db = getFirestore();
+        const functions = getFunctions(app);
+        const sendCustomVerificationEmail = httpsCallable(functions, 'sendCustomVerificationEmail');
+        const requestCustomPasswordReset = httpsCallable(functions, 'requestCustomPasswordReset');
+
+        // Until Cloud Functions and Gmail OAuth are configured, keep Firebase's
+        // built-in mail flow as a safe fallback so registration and recovery keep working.
+        async function sendCustomMailOrFallback(callable, payload, fallback) {
+            try {
+                await callable(payload);
+                return true;
+            } catch (error) {
+                const code = error?.code || '';
+                const canFallback = [
+                    'functions/not-found',
+                    'functions/failed-precondition',
+                    'functions/unavailable',
+                    'functions/internal'
+                ].includes(code);
+                if (!canFallback) throw error;
+                console.warn('Custom IT Global mail is not ready; using Firebase default email.', code);
+                await fallback();
+                return false;
+            }
+        }
 
         // Центральный вход: после успешной авторизации возвращаем пользователя
         // только в заранее разрешённые сервисы IT Global на том же origin.
@@ -1614,9 +1639,18 @@
             const identifier = document.getElementById('loginIdentifier')?.value || '';
             try {
                 const email = await resolveRecoveryEmail(identifier);
-                if (email) await sendPasswordResetEmail(auth, email);
+                let branded = false;
+                if (email) {
+                    branded = await sendCustomMailOrFallback(
+                        requestCustomPasswordReset,
+                        { email },
+                        () => sendPasswordResetEmail(auth, email)
+                    );
+                }
                 showMessage('authMessage',
-                    'Если введённый адрес или Global ID привязан к аккаунту, Firebase отправит письмо со ссылкой для создания нового пароля. Проверьте также папку «Спам».',
+                    branded
+                        ? 'Если введённый адрес или Global ID привязан к аккаунту, IT Global отправит фирменное письмо со ссылкой для создания нового пароля. Проверьте также папку «Спам».'
+                        : 'Если введённый адрес или Global ID привязан к аккаунту, Firebase отправит письмо со ссылкой для создания нового пароля. Проверьте также папку «Спам».',
                     false);
             } catch (error) {
                 if (error.code === 'auth/too-many-requests') {
@@ -1639,8 +1673,18 @@
             );
             if (!confirmed) return;
             try {
-                await sendPasswordResetEmail(auth, pendingEmail);
-                showMessage('unlockMessage', 'Письмо со ссылкой отправлено. Перейдите по ней, задайте новый пароль и вернитесь сюда для подтверждения устройства.', false);
+                const branded = await sendCustomMailOrFallback(
+                    requestCustomPasswordReset,
+                    { email: pendingEmail },
+                    () => sendPasswordResetEmail(auth, pendingEmail)
+                );
+                showMessage(
+                    'unlockMessage',
+                    branded
+                        ? 'Фирменное письмо IT Global отправлено. Задайте новый пароль и вернитесь сюда для подтверждения устройства.'
+                        : 'Письмо Firebase отправлено. Задайте новый пароль и вернитесь сюда для подтверждения устройства.',
+                    false
+                );
             } catch (error) {
                 console.error('Ошибка отправки письма восстановления:', error);
                 showMessage('unlockMessage', error.code === 'auth/too-many-requests'
@@ -1661,8 +1705,18 @@
             );
             if (!confirmed) return;
             try {
-                await sendPasswordResetEmail(auth, currentUser.email);
-                showMessage('profileMessage', 'Письмо отправлено. Перейдите по ссылке Firebase, чтобы задать новый пароль.', false);
+                const branded = await sendCustomMailOrFallback(
+                    requestCustomPasswordReset,
+                    { email: currentUser.email },
+                    () => sendPasswordResetEmail(auth, currentUser.email)
+                );
+                showMessage(
+                    'profileMessage',
+                    branded
+                        ? 'Фирменное письмо IT Global отправлено. Перейдите по ссылке, чтобы задать новый пароль.'
+                        : 'Письмо Firebase отправлено. Перейдите по ссылке, чтобы задать новый пароль.',
+                    false
+                );
             } catch (error) {
                 console.error('Ошибка отправки ссылки смены пароля:', error);
                 showMessage('profileMessage', error.code === 'auth/too-many-requests'
@@ -2278,8 +2332,18 @@
                 return;
             }
             try {
-                await sendEmailVerification(user);
-                showMessage('emailVerificationMessage', 'Письмо отправлено повторно. Проверьте входящие и папку «Спам».', false);
+                const branded = await sendCustomMailOrFallback(
+                    sendCustomVerificationEmail,
+                    {},
+                    () => sendEmailVerification(user)
+                );
+                showMessage(
+                    'emailVerificationMessage',
+                    branded
+                        ? 'Фирменное письмо IT Global отправлено. Проверьте входящие и папку «Спам».'
+                        : 'Письмо отправлено через резервную систему Firebase. Проверьте входящие и папку «Спам».',
+                    false
+                );
             } catch (error) {
                 console.error('Ошибка повторной отправки письма:', error);
                 showMessage('emailVerificationMessage', error.code === 'auth/too-many-requests'
@@ -2396,7 +2460,11 @@
                 if (!globalId) throw new Error('Не удалось создать свободный Global ID. Повторите регистрацию.');
                 registrationProfileCreated = true;
                 setRegistrationProgress(82, 'Подготавливаем подтверждение почты');
-                await sendEmailVerification(userCred.user);
+                await sendCustomMailOrFallback(
+                    sendCustomVerificationEmail,
+                    {},
+                    () => sendEmailVerification(userCred.user)
+                );
                 setRegistrationProgress(100, 'Готово! Остался один шаг');
 
                 // The profile now exists and explicitly starts unlocked. Mark this UID as
